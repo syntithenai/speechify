@@ -1,0 +1,50 @@
+<style>
+.speechify-selected {
+	border: 3px solid blue;
+}
+</style>
+<div id="tester">
+<h3 contenteditable='true'>Active</h3>
+<form>
+<input type='text' id='data-text' />
+<textarea id='data-textarea' ></textarea>
+<input type='submit' value='ANT' />
+<input type='submit' value='BEE' />
+<input type='submit' value='CAT' />
+<input type='button' value='DOG' />
+</form>
+
+<a href='#'>do stuff</a>
+<a href='#'>come to me</a>
+<a href='#'>help me</a>
+<a href='#'>go away</a>
+
+</div>
+<div id="tester2">
+<h3 contenteditable='true'>Inactive</h3>
+<form>
+<input type='text' id='data-text' />
+<textarea id='data-textarea' ></textarea>
+<input type='submit' value='Zoo' />
+<input type='submit' value='pup' />
+<input type='submit' value='kid' />
+<input type='button' value='kick' />
+</form>
+
+<a href='#'>do sleep</a>
+<a href='#'>kick me</a>
+<a href='#'>love me</a>
+<a href='#'>happy happy joy joy</a>
+
+</div>
+
+
+
+<script src="jquery.js" type="text/javascript"></script>
+<script src="jquery.speechify.js" type="text/javascript"></script>
+<script>
+$("#tester").speechify({commands:{'go away':function() {
+alert('go away');
+}}});
+
+</script>
