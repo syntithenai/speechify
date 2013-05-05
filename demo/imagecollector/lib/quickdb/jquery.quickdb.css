@@ -1,0 +1,13 @@
+.join-editbutton, .join-deletebutton, .join-addbutton img {
+	height: 2em;	
+}
+.form-buttons {
+ float:right;
+}
+.filelist .removefilebutton img { height: 2em; }
+.filelist .file {margin-left: 1em;}
+
+.searchers { margin-top: 0; padding-top: 0.2em;}
+.searchers form { padding:0; margin: 0;}
+.searcher {display:block;}
+.search-date span,.search-date input {font-size: small;}
