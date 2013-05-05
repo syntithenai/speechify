@@ -1,31 +1,43 @@
-
-<meta name="viewport" content="initial-scale=1.0">
-<link href='http://fonts.googleapis.com/css?family=Milonga' rel='stylesheet' type='text/css'>
-<link rel="stylesheet" href="jquery-ui/jquery-ui.css" type="text/css" media="all" />
-<link rel="stylesheet" href="jquery.quickdb.css" type="text/css" media="all" />
-<script src="jquery.js" type="text/javascript"></script>
-<script src="jquery-ui.js" type="text/javascript"></script>
-<script src="WebSQL.min.js" type="text/javascript"></script>
-<script src="jquery.quickdb.js" type="text/javascript"></script>
-<script src="jquery.quickdb.model.js" type="text/javascript"></script>
-<script src="jquery.quickdb.view.js" type="text/javascript"></script>
-<script src="jquery.quickdb.controller.js" type="text/javascript"></script>
-<script src="images-meta.js" type="text/javascript"></script>
-<script src="jquery.easing.min.js" type="text/javascript"></script>
-<script src="jquery.cycle.all.js" type="text/javascript"></script>
-<script src="jquery.speechify.js" type="text/javascript"></script>
-<script src="https://www.google.com/jsapi"></script>
-    
-<script>
-//$('#tester').cycle({height: '600',width:'800',fit:1,fx:'blindX,blindY,blindZ,cover,curtainX,curtainY,fade,fadeZoom,growX,growY,none,scrollUp,scrollDown,scrollLeft,scrollRight,scrollHorz,scrollVert,shuffle,slideX,slideY,toss,turnUp,turnDown,turnLeft,turnRight,uncover,wipe,zoom',randomizeEffects:true});
-//}}});
 google.load('search', '1');
-
 
 // QUICKDB PLUGINS
 var galleryList=null;
 var tagEditor=null;
 var imageSearch=null;
+
+
+/*
+SHARE/EXPORT functions
+*/
+function extractList() {
+	var all=$('<div/>');
+	$('.editablerecords tr.row-odd,.editablerecords tr.row-even').each(function(){
+		var text=$('.list-field-description',this).text(); 
+		var img=$('.list-field-images',this).html(); 
+		var item=$('<div/>');
+		item.append(img);
+		var itemText=$('<div/>')
+		itemText.append(text); 
+		item.append(itemText);
+		all.append(item);
+	});
+	return all.html();
+}
+
+function extractCategorisedList() {
+	var all=$('<div/>')
+	$('.editablerecords .collatedlist').each(function() {
+		var section=$(this).clone();
+		$('.editbutton,.deletebutton',section).remove();
+		all.append(section);
+	});
+	return all.html();
+}
+
+function extractSlideShow(scripts) {
+ return '<div id="slideshow" >'+extractList()+'</div>'+scripts;
+}
+
 
 var findImages=function(param) {
 	$('#searchquery').val(param);
@@ -217,166 +229,3 @@ $(document).ready(function() {
 		return false;
 	});
 });
-
-/*
-
-*/
-function extractList() {
-	var all=$('<div/>');
-	$('.editablerecords tr.row-odd,.editablerecords tr.row-even').each(function(){
-		var text=$('.list-field-description',this).text(); 
-		var img=$('.list-field-images',this).html(); 
-		var item=$('<div/>');
-		item.append(img);
-		var itemText=$('<div/>')
-		itemText.append(text); 
-		item.append(itemText);
-		all.append(item);
-	});
-	return all.html();
-}
-
-function extractCategorisedList() {
-	var all=$('<div/>')
-	$('.editablerecords .collatedlist').each(function() {
-		var section=$(this).clone();
-		$('.editbutton,.deletebutton',section).remove();
-		all.append(section);
-	});
-	return all.html();
-}
-
-function extractSlideShow(scripts) {
-return '<div id="slideshow" >'+extractList()+'</div>'+scripts;
-}
-
-</script>
-<div id='content'>
-<h2>Image Collector<span id="branding" ></span></h2>
-<div id='googleadbanner'></div>
-	<div id='export'>
-		<h3>Share<img src='images/android_share.png' ></h3>
-		<div>
-			<div class='voice-help' ><span ><img src="images/microphone.png" class='microphone' >To export, say "SAVE" or "PREVIEW" followed by one of the lists below. </span></div>
-			<div>List <img src='images/find.png' alt='Preview' class='exportbutton' id='preview-list' ><img src='images/disk.png' alt='Save' class='exportbutton' id='save-list' ></div>
-			<div>Categorised List <img src='images/find.png' alt='Preview' class='exportbutton' id='preview-categorisedlist' ><img src='images/disk.png' alt='Save' class='exportbutton' id='save-categorisedlist' ></div>
-			<div>Slideshow <img src='images/find.png' alt='Preview' class='exportbutton' id='preview-slideshow' ><img src='images/disk.png' alt='Save' class='exportbutton' id='save-slideshow' ></div>
-		</div>
-	</div>
-	<div id="googleimagesearch"><span class='voice-help'><img src="images/microphone.png" class='microphone' > To search, say "GOOGLE IMAGES [your search terms]". 
-	<br/>To capture double click or say "SELECT [fragment of description]", then "GRAB IMAGE".
-	</span>
-</script><form id='imagesearchform'><input type='text' id='searchquery' /><input type='submit' value='Search Google' ></form><div id="imagelist"></div></div>
-	
-<!--div id='tageditorwrap'><h3>Tags</h3><div id='tageditor' data-table='tags'></div></div-->
-	<div id='gallerylistwrap'><h3></h3><div id='gallerylist' data-table='images' ></div></div>
-	
-	
-	
-
-</div>
-<style>
-#googleimagesearch {
-	width: 100%;
-}
-#googleimagesearch #imagelist > div {
-	float: left;
-	width: 100px;
-}
-#gallerylist .addbutton {
-	clear: both;
-	display: block;
-}
-#gallerylist .formwrapper {
-	width: 500px;
-	border: 1px solid black;
-	border-radius:6px;
-	padding: 0.5em;
-}
-#gallerylistwrap {
-	width: 100%;
-	clear: left;
-	border: 1px solid black;
-	border-radius:6px;
-	padding: 1em;
-}
-#export {
-	float:right;
-	width: 14%;
-	margin-top: 10px;
-	background-color:white;
-	padding: 1em;
-}
-
-.speechify-selected {
-	border: 3px solid blue;
-}
-.resetsearchbutton img {
-float: left;
-padding-right: 0.5em;
-}
-.editablerecords .addbutton {padding-right: 1em;}
-.editablerecords .images img {
-	width: 70px;
-}
-.formwrapper .images img,.formwrapper .filelist .file a.dataurl img  {
-	max-width: 70px;
-}
-.searchers .searcher {float:left;}
-.collatedlist h3 {margin: 0px;}
-#imagelist {
-width:85%;
-}
-#imagelist img {
-width: 80px;
-}
-#imagelist > div {display: inline: width:80px;}
-.microphone img ,img.microphone  {
-height:25px;
-}
-span.microphone {
-border-radius: 20px;
-height: 70px;
-width: 70px;
-padding: 12px;
-}
-.microphone-pause {background-color:orange;border: 1px solid pink;}
-.microphone-on {background-color:green; border: 1px solid blue;}
-.microphone-off {background-color:red;border: 1px solid orange;}
-.voice-help {
-	background-color:yellow;
-	border: 1px solid orange;
-	border-radius:6px;
-	padding: 0.7em;
-}
-#branding {
-float:left;
-z-index:99;
-}
-h3 {
-	float: left;
-}
-.editablerecords > table tr:nth-child(1) th:nth-child(n+2) {
-	display: none;
-}
-#content {position:relative;}
-
-#googleadbanner {
-	width : 728px;
-	height : 90px;
-	background-color: pink;
-	position: absolute;
-	top: 0px;
-	right: 100px;
-	ddisplay: inline;
-}
-#content > h2 {
-	font-family: 'Milonga', cursive;
-	z-index:99;
-	padding-left:20px;
-	padding-top: 20px;
-	background-image:url(images/celticvines-small.png);
-	background-repeat:no-repeat;
-	width: 30%
-}
-</style>

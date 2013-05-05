@@ -5,15 +5,17 @@ $.fn.quickDB.defaultOptions.tables={
 		},
 		views: {
 			label: { joins:'',fields:"tags.name as label",orderBy:'label' }, 
-			default: { joins:'',fields:"tags.name as label",orderBy:'label',searchers: {
+			default: { joins:'',fields:"tags.name as name",orderBy:'name',searchers: {
 				name: {label:'', type: 'text','fields':'tags.name'},
 			} }
 		}
 	},
 	images:{
 		fields: {
-			images: {type:'file', label:'Image',validation:{required:true}},
+			images: {type:'image', label:'Image',validation:{required:true}},
 			description: {type:'text', label:'Description'},
+			originalLink: {type:'text', label:'Original Link'},
+			originalPage: {type:'text', label:'Original Page'},
 		},
 		joins: {
 			tags:{
@@ -29,12 +31,12 @@ $.fn.quickDB.defaultOptions.tables={
 			label:{ fields:"description as label" },
 			form: { 
 				joins: 'tags', 
-				fields:"images.description as description,images.images as images,group_concat(tags.rowid) as tags_ids,group_concat(tags.name) as tags",
+				fields:"images.description as description,images.images as images,group_concat(tags.rowid) as _tags_ids,group_concat(tags.name) as tags",
 				groupBy:'images.rowid',
 			},
 			list: { 
 				joins: 'tags', 
-				fields:"images.description as description,images.images as images,group_concat(tags.rowid) as tags_ids,group_concat(tags.name) as tags",
+				fields:"images.description as description,images.images as images,group_concat(tags.rowid) as _tags_ids,group_concat(tags.name) as tags",
 				groupBy:'images.rowid',
 				searchers: {
 					name: {label:'Search', type: 'text','fields':'description'},
