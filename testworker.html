@@ -1,0 +1,23 @@
+<html>
+<head>
+<script>
+function test() {
+  db = openDatabase("Foo", "", "", 1);
+  if (db)
+    alert(1);
+  else
+    alert(2);
+	db.transaction(function (tx) {
+	  tx.executeSql('CREATE TABLE IF NOT EXISTS foo (id unique, text)');
+	  tx.executeSql('INSERT INTO foo (id, text) VALUES (1, "synergies")');
+	});
+  worker = new Worker('testworker.js');
+  worker.onmessage = function(event) {
+    alert('GOT DATA:'+event.data);
+  }
+}
+</script>
+</head>
+<body onload="test()">
+</body>
+</html>

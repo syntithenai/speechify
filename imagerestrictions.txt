@@ -1,0 +1,31 @@
+google.search.Search.SAFESEARCH_STRICT
+google.search.Search.SAFESEARCH_MODERATE
+google.search.Search.SAFESEARCH_OFF
+
+google.search.ImageSearch.IMAGESIZE_SMALL
+google.search.ImageSearch.IMAGESIZE_MEDIUM
+google.search.ImageSearch.IMAGESIZE_LARGE
+google.search.ImageSearch.IMAGESIZE_EXTRA_LARGE
+
+google.search.ImageSearch.COLORIZATION_GRAYSCALE
+google.search.ImageSearch.COLORIZATION_COLOR
+
+
+google.search.ImageSearch.COLOR_BLACK
+google.search.ImageSearch.COLOR_BLUE
+google.search.ImageSearch.COLOR_BROWN
+google.search.ImageSearch.COLOR_GRAY
+google.search.ImageSearch.COLOR_GREEN
+google.search.ImageSearch.COLOR_ORANGE
+google.search.ImageSearch.COLOR_PINK
+google.search.ImageSearch.COLOR_PURPLE
+google.search.ImageSearch.COLOR_RED
+google.search.ImageSearch.COLOR_TEAL
+google.search.ImageSearch.COLOR_WHITE
+google.search.ImageSearch.COLOR_YELLOW
+
+
+searcher.setRestriction(
+  google.search.ImageSearch.RESTRICT_COLORIZATION,
+  google.search.ImageSearch.COLORIZATION_GRAYSCALE
+);

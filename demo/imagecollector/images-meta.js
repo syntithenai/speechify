@@ -36,8 +36,7 @@ $.fn.quickDB.defaultOptions.tables={
 			},
 			list: { 
 				joins: 'tags', 
-				//empty images for async load
-				fields:"images.description as description,'' as images,group_concat(tags.rowid) as _tags_ids,group_concat(tags.name) as tags",
+				fields:"images.description as description,images.images as images,group_concat(tags.rowid) as _tags_ids,group_concat(tags.name) as tags",
 				groupBy:'images.rowid',
 				searchers: {
 					name: {label:'Search', type: 'text','fields':'description'},

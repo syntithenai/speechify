@@ -67,12 +67,13 @@ var findImages=function(param) {
 						//newImg.width=100;
 
 						// There is also a result.url property which has the escaped version
-						newImg.src='https://localhost/speechify/caman_proxy.php?camanProxyUrl='+encodeURI(result.url); //"/image-search/v1/result.tbUrl;"
+						//newImg.src='https://localhost/speechify/caman_proxy.php?camanProxyUrl='+encodeURI(result.tbUrl); //"/image-search/v1/result.tbUrl;"
+						newImg.src=result.tbUrl
 						$(newImg).load(function() {
 							var listItem=$(this).parent();
 							$(contentDiv).append(listItem);
 							listItem.show();
-						});
+						}).data('fullimageurl','https://localhost/speechify/caman_proxy.php?camanProxyUrl='+encodeURI(result.url));
 						
 						imgContainer.appendChild(newImg);
 						imgContainer.appendChild(title);
@@ -132,34 +133,48 @@ var findImages=function(param) {
 	
 	var grabImages=function() {
 		//$('');
-		
+		$('.formwrapper',$('#gallerylist')).html('');
+				galleryList.api.controller.newRecord('images');
+				
 		var match=$('#imagelist div.speechify-selected .file a.dataurl img');
+		var base64File;
 		var base64FileName=$('#imagelist div.speechify-selected').children('div').text();
 		var base64FileUrl=$('#imagelist div.speechify-selected').children('img')[0].src;
-		console.log('GRABBING IMAGES',base64FileName,base64FileUrl);
+		var base64FileUrlFull=$('#imagelist div.speechify-selected').children('img').data('fullimageurl')
 		$('#myCanvas').remove();
 		$('body').prepend('<canvas id="myCanvas" ></canvas>');
 		$('#myCanvas').hide();
 		var c = document.getElementById("myCanvas");
 		var ctx = c.getContext("2d");
 		var img = $('#imagelist div.speechify-selected').children('img')[0];
-		if (img) { 
-			console.log('img domdds',img,img.naturalWidth,img.naturalHeight);
-			$('#myCanvas').attr('width',img.naturalWidth);
-			$('#myCanvas').attr('height',img.naturalHeight);
-			//console.log('img dom',$(img));
-			ctx.drawImage(img,0,0,img.naturalWidth,img.naturalHeight);
-			var base64File=c.toDataURL();
-			$('.formwrapper',$('#gallerylist')).html('');
-			galleryList.api.controller.newRecord('images');
-			setTimeout(function() {
-				$('#gallerylist .filelist').append('<span class="file"><a class="dataurl" download="'+base64FileName+'" data-name="'+base64FileName+'" href="'+base64File+'" ><img src="'+base64File+'" /></a><span class="removefilebutton"><a href=""><img src="images/deleterecord.png"></a></span></span>');
-				// 
-				$('.form-description input.form-editingdata').val(base64FileName);
-				$('.form-tags input.join-searchinput').val($.trim($('#searchquery').val()));
-				$('.form-tags input.join-searchinput').keydown();
-				
-			},100);
+		console.log('GRABBING IMAGES',$(img).data('fullimageurl')); //base64FileName,base64FileUrl,base64FileUrlFull);
+		
+		if (img && $(img).data('fullimageurl').length>0) { 
+		console.log('GRAB');
+			var bigImage=$('<img>');
+			$(bigImage).attr('src',$(img).data('fullimageurl')); //.hide();
+			$('body').append(bigImage);
+			$(bigImage).bind('load',function() {
+				console.log('img domdds',this,this.naturalWidth,this.naturalHeight);
+				$('#myCanvas').attr('width',this.naturalWidth);
+				$('#myCanvas').attr('height',this.naturalHeight);
+				console.log('img dom1');
+				ctx.drawImage(this,0,0,this.naturalWidth,this.naturalHeight);
+				console.log('img dom2');
+				var base64File=c.toDataURL();
+				console.log('img dom3');
+				//setTimeout(function() {
+					$('#gallerylist .filelist').append('<span class="file"><a class="dataurl" download="'+base64FileName+'" data-name="'+base64FileName+'" href="'+base64File+'" ><img src="'+base64File+'" /></a><span class="removefilebutton"><a href=""><img src="images/deleterecord.png"></a></span></span>');
+					// 
+					console.log('img dom4');
+					$('.form-description input.form-editingdata').val(base64FileName);
+					$('.form-tags input.join-searchinput').val($.trim($('#searchquery').val()));
+					$('.form-tags input.join-searchinput').keydown();
+					console.log('img dom5s');
+					
+				//},100);
+			})
+			//$(bigImage).load();
 		}
 	}
 
@@ -168,7 +183,7 @@ $(document).ready(function() {
    var speechCommands={
 	// google image search
 	'google images':findImages,
-	'select':selectImages,
+	'select result':selectImages,
 	'grab image':grabImages,
 	// images library
 		// select image,search images, search images tags, delete selected image,edit selected image|okay|double click, download selected image
@@ -183,6 +198,9 @@ $(document).ready(function() {
    $('body').speechify({'commands':speechCommands});
 	galleryList=$('#gallerylist').quickDB()[0];
 	galleryList.settings.templates.listCollateBy='tags';
+	//galleryList.settings.templates.listRow = "<div class='imagecollectoritem' ><span>${listButtons.edit}${listButtons.delete}</span>${listFields}</div>";
+	//galleryList.settings.templates.listHeaders = "<div>${listHeaderButtons.add}</div>";
+	//galleryList.settings.templates.listCollateItemWrap = "<div class='imagecollection-collation' ><h3>${collateValue}</h3>${list}</div>";
 	
 	//galleryList.api.view.renderListFinalCallback=function(table,fields,records) {
 	//$(".editablerecords .row-odd,.editablerecords .row-even").each(function() {
@@ -228,4 +246,6 @@ $(document).ready(function() {
 		});
 		return false;
 	});
+	
+	findImages('dd')
 });

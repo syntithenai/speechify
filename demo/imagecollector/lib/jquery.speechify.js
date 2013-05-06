@@ -20,7 +20,6 @@ Date: 5/2013
 			var recognising=false;
 			var pendingCommand=false;
 			var handlerStarted=false;
-			var handlerStarted=false;
 			var transcript = '';
 			var captureType='';
 			var captureTarget=null;
@@ -120,9 +119,11 @@ Date: 5/2013
 					} else {
 						// create notify DOM
 						$(pluginDOM).append('<div id="speechify-status" ></div>');
-						$('#speechify-status').bind('click.speechifystart',function() {startRecognising();})
 						$('#speechify-status').attr('style','position: fixed; top: 20px; right: 20px;');
 					}	
+					$('#speechify-status').unbind('click.speechifystart');
+					$('#speechify-status').bind('click.speechifystart',function() {startRecognising();})
+						
 					$('#speechify-status').html('<span class="microphone microphone-on"><img src="images/microphone.png" >ON</span>');
 					$('.voice-help').show();
 					recognising=true;
@@ -130,41 +131,34 @@ Date: 5/2013
 						speechRecognitionHandler.start();
 						handlerStarted=true;
 					}
+					
 					// click in text/textarea to redirect command switch to text entry
 					// TODO - what about window.contentEditable=true; - trigger event?
-					$('input[type=text]',pluginDOM).bind('click.speechifytext',function() {
+					$('input[type=text],input[type=search]',pluginDOM).bind('click.speechifytext',function() {
 						$(this).unbind('blur.speechifytext');
 						$(this).bind('blur.speechifytext',function() {
 							console.log('stop text entry');
-							captureType='';
 						});
 						console.log('start text entry');
-						captureType='text';
-						captureTarget=this;
 						startRecognising();
 					});
 					$('textarea',pluginDOM).bind('mouseup.speechifytextarea',function() {
 						$(this).unbind('blur.speechifytextarea');
 						$(this).bind('blur.speechifytextarea',function() {
 							console.log('stop textarea entry');
-							captureType='';
 						});
 						console.log('start textarea entry');
-						captureType='textarea';
-						captureTarget=this;
 						startRecognising();
 					});
 					$('[contenteditable=true]',pluginDOM).bind('focus',function() {
 						$(this).unbind('blur.speechifycontenteditable');
 						$(this).bind('blur.speechifycontenteditable',function() {
 							console.log('stop contenteditable entry');
-							captureType='';
 						});
 						console.log('start contenteditable entry');
-						captureType='contenteditable';
-						captureTarget=this;
 						startRecognising();
 					});
+					
 				}
 			}
 			function pauseRecognising() {
@@ -194,7 +188,7 @@ Date: 5/2013
 				}
 			}
 			speechRecognitionHandler.onstart = function(){
-				console.log('staryt');
+				console.log('start speech recognition');
 			};
 			speechRecognitionHandler.onerror = function(e){
 				console.log('Something wrong happened', e.error);
@@ -213,73 +207,77 @@ Date: 5/2013
 							stopRecognising();
 						} else if (recognising) {
 							// START MAIN DECISION MAKING HERE
-							// text input ?
-							if (captureType.length>0) {
-								if (captureType=='text')  {
-									$(captureTarget).val(transcript);
-								} else if (captureType=='textarea')  {
-									var sel = getInputSelection(captureTarget);
-									var val = $(captureTarget).val();
-									$(captureTarget).data('oldval',val);
-									$(captureTarget).val(joinThreeStrings($.trim(val.slice(0, sel.start)),transcript,$.trim(val.slice(sel.end))));
-								} else if (captureType=='contenteditable')  {
-									function replaceSelectedText(replacementText) {
-										var sel, range;
-										if (window.getSelection) {
-											sel = window.getSelection();
-											if (sel.rangeCount) {
-												range = sel.getRangeAt(0);
-												range.deleteContents();
-												range.insertNode(document.createTextNode(replacementText+' '));
-											}
-										} else if (document.selection && document.selection.createRange) {
-											range = document.selection.createRange();
-											range.text = replacementText+' ';
-										}
-									}
-									replaceSelectedText(transcript);
-								} else {
-									console.log('invalid captureType');
-								}
+							// first commands and buttons
+							
+							// CLICK ON SELECTED RECORD
+							// TODO WARNING MULTIPLE SELECTION
+							if ($('.speechify-selected',pluginDOM).length==1 && (transcript=="okay" || transcript=="click")) {
+								console.log('ok selection',$('.speechify-selected',pluginDOM));
+								$('.speechify-selected',pluginDOM).each(function() {$(this).click()});
+								$('.speechify-selected',pluginDOM).removeClass('speechify-selected');
 							} else {
-								// CLICK ON SELECTED RECORD
-								// TODO WARNING MULTIPLE SELECTION
-								if ($('.speechify-selected',pluginDOM).length==1 && (transcript=="okay" || transcript=="click")) {
-									console.log('ok selection',$('.speechify-selected',pluginDOM));
-									$('.speechify-selected',pluginDOM).each(function() {$(this).click()});
-								} else {
-									console.log('not ok selection - continue',options);
-									var executionCompleted=false;
-									// query options.commands
-									//var done=false;
-									// ANY CONFIGURED COMMANDS MATCHING ?
-									if (options.commands) {
-										console.log(options.commands);
-										$.each(options.commands,function(key,value) {
-										console.log(key,value);
-											console.log('try command '+key,value);
-											if ($.trim(transcript).indexOf(key)==0) {
-												console.log('do command '+key,transcript,$.trim(transcript).split(key));
-												executionCompleted=true;
-												// TODO ?? PARAMETERS
-												value($.trim(transcript).split(key)[1]); 
-											}
-										});
-									}
-									// FINALLY TRY FOR A MATCH WITH BUTTONS AND LINKS
-									if (!executionCompleted) {									
-										var matches=[];
-										$("a:contains('"+transcript+"')",pluginDOM).each(function() {matches.push(this);});
-										//	input type=button|submit|image value|name
-										$("input[type=submit],input[type=button],input[type=image]",pluginDOM).each(function() { console.log(this); if (this.value.toLowerCase()==transcript.toLowerCase()) matches.push(this);});
-										console.log('MATCHES',matches);
-										$('.speechify-selected',pluginDOM).each(function() {$(this).removeClass("speechify-selected");});
+								console.log('not ok selection - continue',options);
+								var executionCompleted=false;
+								// query options.commands
+								//var done=false;
+								// ANY CONFIGURED COMMANDS MATCHING ?
+								if (options.commands) {
+									console.log(options.commands);
+									$.each(options.commands,function(key,value) {
+									console.log(key,value);
+										console.log('try command '+key,value);
+										if ($.trim(transcript).indexOf(key)==0) {
+											console.log('do command '+key,transcript,$.trim(transcript).split(key));
+											executionCompleted=true;
+											// TODO ?? PARAMETERS
+											value($.trim(transcript).split(key)[1]); 
+										}
+									});
+								}
+								// TRY FOR A MATCH WITH BUTTONS AND LINKS
+								if (!executionCompleted) {									
+									var matches=[];
+									$("a:contains('"+transcript+"')",pluginDOM).each(function() {matches.push(this);});
+									//	input type=button|submit|image value|name
+									$("input[type=submit],input[type=button],input[type=image]",pluginDOM).each(function() { console.log(this); if (this.value.toLowerCase()==transcript.toLowerCase()) matches.push(this);});
+									console.log('MATCHES',matches);
+									if (matches.length>0) {
+										$('.speechify-selected',pluginDOM).each(function() {$(this).removeClass("speechify-selected")});
 										$.each(matches,function() {
 											$(this).addClass("speechify-selected");
 										});
+										executionComplete=true;
+									}
+								}
+								if (!executionCompleted) {									
+									// otherwise if focussed
+									if ($('input[type=text]:focus').length>0) {
+										$( document.activeElement ).val(transcript)
+									} else if ($('textarea:focus').length>0) {
+										var sel = getInputSelection(captureTarget);
+										var val = $(captureTarget).val();
+										//$(captureTarget).data('oldval',val);
+										$(captureTarget).val(joinThreeStrings($.trim(val.slice(0, sel.start)),transcript,$.trim(val.slice(sel.end))));
+									} else if ($('*[contenteditable=true]').length>0) {
+										function replaceSelectedText(replacementText) {
+											var sel, range;
+											if (window.getSelection) {
+												sel = window.getSelection();
+												if (sel.rangeCount) {
+													range = sel.getRangeAt(0);
+													range.deleteContents();
+													range.insertNode(document.createTextNode(replacementText+' '));
+												}
+											} else if (document.selection && document.selection.createRange) {
+												range = document.selection.createRange();
+												range.text = replacementText+' ';
+											}
+										}
+										replaceSelectedText(transcript);
 									}
 								}
 							}
+							
 							console.log('COMMAND:'+transcript);
 						} else {
 							console.log('IGNORE:'+transcript);

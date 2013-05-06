@@ -579,6 +579,34 @@ $.fn.quickDB.api.view = {
 		//console.log('list rowss',allRows.html());
 		$(plugin.listTarget).append(allRows);
 		plugin.timer.log('INITLIST START BINDING ');
+		// ASYNC LOAD IMAGES
+		var imageWorker=new Worker('imageworker.js');
+		imageWorker.onmessage=function(message) {
+			//console.log('LOAD IMAGE FEEDBACK',message.data);
+			var valueVar=null;
+			try {
+			  var valueVar=JSON.parse(message.data.result);
+			} catch (e) {
+				if (true) console.log('Failed to restore images from JSON',e,theValue);	
+			}
+			var fileList='';
+			if (valueVar!=null) $.each(valueVar,function(i,file) {
+				fileList+="<a class='dataurl' href='"+file.data+"' download='"+file.name+"' title='"+file.size+"kb Last Modified "+file.lastmodifieddate+"' data-name='"+file.name+"' data-size='"+file.size+"' data-lastmodifieddate='"+file.lastmodifieddate+"'><img src='"+file.data+"' />"+'</a>';
+			});
+			$('.editablerecords .images a.dataurl[data-rowid='+message.data.rowid+']').each(function() {
+				$(this).parent().html(fileList);
+			});
+		}
+		$('.editablerecords .images a.dataurl').each(function() {
+			if ($(this).data('rowid')>0) {
+				data={};
+				data.rowid=$(this).data('rowid');
+				data.table=$(this).data('autoloadtable');
+				data.field=$(this).data('autoloadfield');
+				//console.log('FIRE POST MESSAGE',data);
+				imageWorker.postMessage(data);
+			}
+		});
 		// BIND CLICK FOR WHOLE LIST FOR EFFICIENCY
 		$('.editablerecords',plugin.listTarget).unbind('click.editablerecords');
 		$('.editablerecords',plugin.listTarget).bind('click.editablerecords',function(event) {
@@ -660,6 +688,7 @@ $.fn.quickDB.api.view = {
 		var fieldValue=record[field];
 		// check for join
 		if (plugin.settings.tables[table] && plugin.settings.tables[table].joins && plugin.settings.tables[table].joins[field] && $.isPlainObject(plugin.settings.tables[table].joins[field])) {
+			// default
 			fieldValue=record[field];
 			// wrap joins in spans with id attributes
 			if (fieldValue && fieldValue.length) {
@@ -705,7 +734,7 @@ $.fn.quickDB.api.view = {
 			fieldValue=plugin.api.view.renderFileField(table,field,fieldValue);
 			//console.log('FILE',fieldValue);
 		} else if (fieldMeta.type=='image') {
-			fieldValue=plugin.api.view.renderImageField(table,field,fieldValue);
+			fieldValue=plugin.api.view.renderImageField(table,field,fieldValue,record['rowid']);
 			//fieldValue="<a target='_new' href='"+fieldValue+";' >"+fieldValue+"</a>";
 		} else if (fieldMeta.type=='url') {
 			fieldValue="<a target='_new' href='"+fieldValue+";' >"+fieldValue+"</a>";
@@ -834,9 +863,13 @@ $.fn.quickDB.api.view = {
 		});
 		return fileList; 
 	},
-	renderImageField : function(table,key,theValue) {
+	renderImageField : function(table,key,theValue,rowid) {
 		var plugin=this;
 		var fileList='';
+		// empty data for async load back in renderRecords
+		fileList+="<span class='images' ><a class='dataurl' data-autoloadtable='"+table+"' data-autoloadfield='"+key+"' href='#' data-rowid='"+rowid+"' ><img src='' />"+'</a></span> ';
+		return fileList; 
+		/*var fileList='';
 		var valueVar=null;
 		try {
 		  var valueVar=JSON.parse(theValue);
@@ -847,6 +880,7 @@ $.fn.quickDB.api.view = {
 			fileList+="<span class='images' ><a class='dataurl' href='"+file.data+"' download='"+file.name+"' title='"+file.size+"kb Last Modified "+file.lastmodifieddate+"' data-name='"+file.name+"' data-size='"+file.size+"' data-lastmodifieddate='"+file.lastmodifieddate+"'><img src='"+file.data+"' />"+'</a></span> ';
 		});
 		return fileList; 
+		*/
 	},
 	renderForm : function(table,fields,record) {
 	console.log('render form',table,fields,record)
@@ -1316,7 +1350,8 @@ $.fn.quickDB.api.view = {
 		$('.join-addbutton',joinDOM).bind('click',function() {
 			var defaults={};
 			var fields=Object.keys(plugin.settings.tables[table].fields);
-			defaults[fields[0]]=$('.join-searchinput',$(this).parent()).val();
+			console.log('SET THIS VALUE IN CHILD FORM',$('.join-searchinput',$(this).parents('.join')).val());
+			defaults[fields[0]]=$('.join-searchinput',$(this).parents('.join')).val();
 			plugin.api.controller.newChildRecord(label,table,join,joinMeta,selString,targetID,tableRowId,defaults);
 		});
 		plugin.api.view.bindAutoComplete($('.join-searchinput',joinDOM),joinMeta,$('.form-'+join,joinDOM),label,table,join,selectedIds,targetID,tableRowId);
