@@ -73,7 +73,7 @@ var findImages=function(param) {
 							var listItem=$(this).parent();
 							$(contentDiv).append(listItem);
 							listItem.show();
-						}).data('fullimageurl','https://localhost/speechify/caman_proxy.php?camanProxyUrl='+encodeURI(result.url));
+						}).data('fullimageurl','../../caman_proxy.php?camanProxyUrl='+encodeURI(result.url));
 						
 						imgContainer.appendChild(newImg);
 						imgContainer.appendChild(title);
@@ -134,51 +134,48 @@ var findImages=function(param) {
 	var grabImages=function() {
 		//$('');
 		$('.formwrapper',$('#gallerylist')).html('');
-				galleryList.api.controller.newRecord('images');
-				
-		var match=$('#imagelist div.speechify-selected .file a.dataurl img');
-		var base64File;
+		galleryList.api.controller.newRecord('images');
+		$('#gallerylist .filelist').append('<span class="file"><img class="ajaxloader" src="images/ajax-loader.gif"></span>');
 		var base64FileName=$('#imagelist div.speechify-selected').children('div').text();
+		$('.form-description input.form-editingdata').val(base64FileName);
+		$('.form-tags input.join-searchinput').val($.trim($('#searchquery').val()));
+		$('.form-tags input.join-searchinput').focus();
+		$('.form-tags input.join-searchinput').keydown();
+				
+		
+		/*var match=$('#imagelist div.speechify-selected .file a.dataurl img');
+		var base64File;
 		var base64FileUrl=$('#imagelist div.speechify-selected').children('img')[0].src;
-		var base64FileUrlFull=$('#imagelist div.speechify-selected').children('img').data('fullimageurl')
+		var base64FileUrlFull=$('#imagelist div.speechify-selected').children('img').data('fullimageurl')*/
 		$('#myCanvas').remove();
 		$('body').prepend('<canvas id="myCanvas" ></canvas>');
 		$('#myCanvas').hide();
 		var c = document.getElementById("myCanvas");
 		var ctx = c.getContext("2d");
 		var img = $('#imagelist div.speechify-selected').children('img')[0];
-		console.log('GRABBING IMAGES',$(img).data('fullimageurl')); //base64FileName,base64FileUrl,base64FileUrlFull);
+		//console.log('GRABBING IMAGES',$(img).data('fullimageurl')); //base64FileName,base64FileUrl,base64FileUrlFull);
 		
 		if (img && $(img).data('fullimageurl').length>0) { 
-		console.log('GRAB');
+		//console.log('GRAB');
 			var bigImage=$('<img>');
-			$(bigImage).attr('src',$(img).data('fullimageurl')); //.hide();
+			$(bigImage).attr('src',$(img).data('fullimageurl')).hide();
 			$('body').append(bigImage);
 			$(bigImage).bind('load',function() {
 				console.log('img domdds',this,this.naturalWidth,this.naturalHeight);
 				$('#myCanvas').attr('width',this.naturalWidth);
 				$('#myCanvas').attr('height',this.naturalHeight);
-				console.log('img dom1');
 				ctx.drawImage(this,0,0,this.naturalWidth,this.naturalHeight);
-				console.log('img dom2');
 				var base64File=c.toDataURL();
-				console.log('img dom3');
-				//setTimeout(function() {
+				$('#gallerylist .filelist .ajaxloader').remove();
 					$('#gallerylist .filelist').append('<span class="file"><a class="dataurl" download="'+base64FileName+'" data-name="'+base64FileName+'" href="'+base64File+'" ><img src="'+base64File+'" /></a><span class="removefilebutton"><a href=""><img src="images/deleterecord.png"></a></span></span>');
-					// 
-					console.log('img dom4');
-					$('.form-description input.form-editingdata').val(base64FileName);
-					$('.form-tags input.join-searchinput').val($.trim($('#searchquery').val()));
-					$('.form-tags input.join-searchinput').keydown();
-					console.log('img dom5s');
-					
-				//},100);
 			})
-			//$(bigImage).load();
 		}
 	}
 
 $(document).ready(function() {
+	$('#sharebutton').bind('click',function() {
+		$('#gallerylist').stackContent($('#shareoptions'));
+	});
 // Create an Image Search instance.
    var speechCommands={
 	// google image search
@@ -198,15 +195,31 @@ $(document).ready(function() {
    $('body').speechify({'commands':speechCommands});
 	galleryList=$('#gallerylist').quickDB()[0];
 	galleryList.settings.templates.listCollateBy='tags';
-	//galleryList.settings.templates.listRow = "<div class='imagecollectoritem' ><span>${listButtons.edit}${listButtons.delete}</span>${listFields}</div>";
-	//galleryList.settings.templates.listHeaders = "<div>${listHeaderButtons.add}</div>";
-	//galleryList.settings.templates.listCollateItemWrap = "<div class='imagecollection-collation' ><h3>${collateValue}</h3>${list}</div>";
+/*	galleryList.settings.templates.listRow = "<div class='imagecollectoritem' ><span>${listButtons.edit}${listButtons.delete}</span>${listFields}</div>";
+	galleryList.settings.templates.listHeaders = "<div>${listHeaderButtons.add}</div>";
+	galleryList.settings.templates.listCollateItemWrap = "<div class='imagecollection-collation' ><h3>${collateValue}</h3>${list}</div>";
 	
-	//galleryList.api.view.renderListFinalCallback=function(table,fields,records) {
+	plugin.settings.templates.listRow = "<tr><td><input type='checkbox' checked class='listrowcheckbox'  data-rowid='${rowid}' />${listButtons.edit}${listButtons.delete}</td>${listFields}<td>${listButtons.approve}${listButtons.tag}${listButtons.rule}${listButtons.split}</td></tr>";
+	plugin.settings.templates.listHeaders = "<tr><th><input type='checkbox' checked class='listrowtoggleall'/>${listHeaderButtons.add}</th>${listHeaders}<th>${listHeaderButtons.approveselected}${listHeaderButtons.tagselected}${listHeaderButtons.rulefromselected}${listHeaderButtons.splitrulefromselected}</th></tr>";
+	plugin.settings.templates.listCollateItemWrap = "<div ><h3><input type='checkbox' checked class='listrowtogglecollated'/>${collateValue}</h3>${list}</div>";
+	
+	
+	
+	galleryList.api.view.renderListFinalCallback=function(table,fields,records) {
+		console.log('BIND IN LIST FINAL CALLBACK');
+		$('#gallerylist .images a.dataurl').unbind('click');
+		// .images a.dataurl
+		$('#gallerylist').bind('click',function(e) {
+			console.log('BIND IN LIST FINAL CALLBACK CLICKs');
+			console.log(e);
+			//$(this).fancybox();
+			e.preventDefault();
+			return false;
+		});
 	//$(".editablerecords .row-odd,.editablerecords .row-even").each(function() {
-	//});	
+	};	
 	//}	
-	
+	*/
 	//tagEditor=$('#tageditor').quickDB()[0];
 	$('#imagesearchform').submit(function() {
 		findImages($('#searchquery').val());
@@ -215,7 +228,7 @@ $(document).ready(function() {
 	$('.exportbutton').bind('click',function() {
 		var button=this;
 		//scripts.load('jquery.carousel.all.php');
-		$.get("jquery.carousel.all.php", function(scripts) {
+		$.get("../../lib/jquery.carousel.all.php", function(scripts) {
 			var result;
 			var idParts=$(button).attr('id').split('-');
 			// extract/generate export content
@@ -247,5 +260,5 @@ $(document).ready(function() {
 		return false;
 	});
 	
-	findImages('dd')
+	//findImages('dd')
 });

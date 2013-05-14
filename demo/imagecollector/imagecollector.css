@@ -52,27 +52,26 @@
 margin-left: 35%;	
 background-color:white;
 	width:62%;
+	border: 1px solid black;
+	border-radius:6px;
 }
+img.exportbutton {height: 40px; padding-left: 1em;};
 #gallerylist .addbutton {
 	clear: both;
 	display: block;
 }
-#gallerylist .formwrapper,#gallerylist .editablerecords {
-margin-left:10px;
-	width: 58%;
-	border: 1px solid black;
-	border-radius:6px;
-	padding: 1em;
-}
-#gallerylistwrap {
+#gallerylist .formwrapper,#gallerylist .editablerecords,#shareoptions  {
 	width: 100%;
+	padding: 1em;
 }
 
 #imagecollectoritem {
 	width: 100px;
 	float:left;
 }
-
+#shareoptions {
+	width: 50%;
+}
 /*VOICE SEARCH*/
 .microphone img ,img.microphone  {
 height:25px;

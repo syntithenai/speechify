@@ -1,0 +1,15 @@
+#speechify-status .microphone > img   {
+height:30px;
+}
+#speechify-status .microphone > img{
+border-radius: 30px;
+padding: 6px;
+box-shadow: 2px 2px 5px #888888;	
+}
+#speechify-status .microphone-pause img {background-color:orange;border: 2px solid pink;}
+#speechify-status .microphone-on img {background-color:green; border: 2px solid blue;}
+#speechify-status .microphone-off img {background-color:red;border: 2px solid orange;}
+.speechify-selected {
+	border: 3px solid blue;
+	
+}
