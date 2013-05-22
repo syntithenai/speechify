@@ -89,34 +89,6 @@ Date: 5/2013
 						};
 					}
 				}
-				 function addPaginationLinks() {
-					// To paginate search results, use the cursor function.
-					var cursor = imageSearch.cursor;
-					var curPage = cursor.currentPageIndex; // check what page the app is on
-					var pagesDiv = document.createElement('div');
-					for (var i = 0; i < cursor.pages.length; i++) {
-					  var page = cursor.pages[i];
-					  if (curPage == i) { 
-
-					  // If we are on the current page, then don't make a link.
-						var label = document.createTextNode(' ' + page.label + ' ');
-						pagesDiv.appendChild(label);
-					  } else {
-
-						// Create links to other pages using gotoPage() on the searcher.
-						var link = document.createElement('a');
-						link.href="/image-search/v1/javascript:imageSearch.gotoPage("+i+');';
-						link.innerHTML = page.label;
-						link.style.marginRight = '2px';
-						pagesDiv.appendChild(link);
-					  }
-					}
-
-					var contentDiv = document.getElementById('content');
-					contentDiv.appendChild(pagesDiv);
-				  }
-				
-
 				function startRecognising() {
 					console.log('start');
 					if (!recognising) {

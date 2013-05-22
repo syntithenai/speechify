@@ -73,7 +73,7 @@ var findImages=function(param) {
 							var listItem=$(this).parent();
 							$(contentDiv).append(listItem);
 							listItem.show();
-						}).data('fullimageurl','../../caman_proxy.php?camanProxyUrl='+encodeURI(result.url));
+						}).data('fullimageurl','caman_proxy.php?camanProxyUrl='+encodeURI(result.url));
 						
 						imgContainer.appendChild(newImg);
 						imgContainer.appendChild(title);
@@ -195,6 +195,12 @@ $(document).ready(function() {
    $('body').speechify({'commands':speechCommands});
 	galleryList=$('#gallerylist').quickDB()[0];
 	galleryList.settings.templates.listCollateBy='tags';
+	galleryList.api.view.renderListFinalCallback=function(table,fields,records) {
+		$('.editablerecords .list-field-description').click(function() { 
+			console.log('say',$(this).parent().children('.list-field-description').text());
+			$.fn.speechify.say($(this).parent().children('.list-field-description').text()) 
+		})
+	};
 /*	galleryList.settings.templates.listRow = "<div class='imagecollectoritem' ><span>${listButtons.edit}${listButtons.delete}</span>${listFields}</div>";
 	galleryList.settings.templates.listHeaders = "<div>${listHeaderButtons.add}</div>";
 	galleryList.settings.templates.listCollateItemWrap = "<div class='imagecollection-collation' ><h3>${collateValue}</h3>${list}</div>";
