@@ -1,15 +1,39 @@
 #speechify-status .microphone > img   {
 height:30px;
 }
-#speechify-status .microphone > img{
+#speechify-status .microphone > img {
 border-radius: 30px;
 padding: 6px;
 box-shadow: 2px 2px 5px #888888;	
 }
+#speechify-status {
+position: relative;
+}
+#speechify-status .microphone > .speechifymessages {
+	vertical-align: center;
+	min-width: 100%;
+	position: absolute;
+	top: 20px;
+	right: 50px;
+}
+#speechify-status .microphone > .speechifymessages {
+background-color:pink;
+	border: 2px dashed red;
+	border-radius: 30px;
+	padding: 6px;
+	padding-top: 30px;
+	padding-bottom: 30px;
+	box-shadow: 2px 2px 5px #888888;	
+	min-width: 300px;
+}
+
+
 #speechify-status .microphone-pause img {background-color:orange;border: 2px solid pink;}
 #speechify-status .microphone-on img {background-color:green; border: 2px solid blue;}
 #speechify-status .microphone-off img {background-color:red;border: 2px solid orange;}
 .speechify-selected {
 	border: 3px solid blue;
 	
+}
+#speechify-status .microphone {
 }

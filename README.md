@@ -20,3 +20,19 @@ $('body').speechify({commands:{'do stuff':function() {console.log('busy doing');
 $.fn.speechify.speak('short sentence');
 		</pre>
 		
+		
+		
+		
+TODO
+===========
+grammars see below		
+		
+		
+		
+links
+=============
+
+- https://codepen.io/bryik/pen/mErOOR?editors=0011
+- http://cmusphinx.sourceforge.net/wiki/sphinx4:jsgfsupport
+- https://www.w3.org/TR/jsgf/
+- https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API/Using_the_Web_Speech_API
