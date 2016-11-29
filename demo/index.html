@@ -1,6 +1,6 @@
 
 
-<script src="../../../lib/jquery.js" type="text/javascript"></script>
+<script src="../lib/jquery.js" type="text/javascript"></script>
 <script src="../jquery.speechify.js" type="text/javascript"></script>
 <script src="../grammars.js" type="text/javascript"></script>
 <link rel="stylesheet" href="../jquery.speechify.css" type="text/css" media="all" />
@@ -8,27 +8,57 @@
 $.fn.speechify.relPath='../';
 </script>
 <input type="button" onclick="$.fn.speechify.say('hello world!')" value="Say 'Hello World!'" />
-	[['check for [$adj] [cats] now'],
-		function(searchText) {
-			console.log(['DONE kat check',searchText]);
-		}
-	],
+
 <script>
+var testGrammarStrings = [
+// grammar ordering (specific first)
+'create',
+'create box',
+'create red box',
+'create red $thing',
+'create $color box',
+'create [$color] [$thing]',
+//  alternate ordering
+'make $color [$thing]',  
+'remake [$color] $thing', // DO THIS - OPTIONAL FIRST
+// options
+'delete (red box|green bed)',
+'remove ($size shirt|$color hat)'
+];
+	
+var testSuite = [
+	//{transcript:'create',result:{key: 'c',variables:{"$time":"why","$date":"now",'$d2':'red'}}}, 
+	{transcript:'create',result:{key: 'create [$color] [$thing]',variables:{}}}, 
+	{transcript:'create bed',result:{key: 'create [$color] [$thing]',variables:{'$color':'bed'}}}, 
+	{transcript:'create box',result:{key: 'create box',variables:{}}}, 
+	{transcript:'create red box',result:{key: 'create red box',variables:{}}}, 
+	{transcript:'create green box',result:{key: 'create $color box',variables:{'$color':'green'}}}, 
+	{transcript:'create green bed',result:{key: 'create [$color] [$thing]',variables:{'$thing':'bed','$color':'green'}}}, 
+	
+	{transcript:'make box',result:{key: 'make $color [$thing]',variables:{'$color':'box'}}},  //!!  wrong - put optional first as per 'remake box'
+	{transcript:'make red box',result:{key: 'make $color [$thing]',variables:{'$thing':'box','$color':'red'}}}, 
+	{transcript:'make green box',result:{key: 'make $color [$thing]',variables:{'$thing':'box','$color':'green'}}}, 
+	
+	{transcript:'remake box',result:{key: 'remake [$color] $thing',variables:{'$thing':'box'}}}, 
+	{transcript:'remake red box',result:{key: 'remake [$color] $thing',variables:{'$thing':'box','$color':'red'}}}, 
+	{transcript:'remake green box',result:{key: 'remake [$color] $thing',variables:{'$thing':'box','$color':'green'}}}, 
+	
+	{transcript:'delete green bed',result:{key: 'delete (red box|green bed)',variables:{}}}, 
+	{transcript:'delete red box',result:{key: 'delete (red box|green bed)',variables:{}}}, 
+	{transcript:'delete red bed',result:'::FAIL::'}, 
+	
+	{transcript:'remove small shirt',result:{key: 'remove ($size shirt|$color hat)',variables:{'$size':'small'}}}, 
+	{transcript:'remove red hat',result:{key: 'remove ($size shirt|$color hat)',variables:{'$color':'red'}}}, 
+	{transcript:'remove red hart',result:'::FAIL::'}, 
+	{transcript:'remove hat',result:'::FAIL::'}, 
+
+];
 
 $(document).ready(function() {
-	// speak on click
-	$('.speakable-hover').click(function() {
-		$.fn.speechify.say($(this).text());
-	});
-
 	$("#speechifydemo").speechify({
-		'grammars' : grammars,
-		'globalGrammars' : ['search for']
-	});
+//		'grammars' : grammars,
+	}).runTests(testGrammarStrings,testSuite);
 
-	// welcome message
-	//$.fn.speechify.say('hi steve');
-	$.fn.speechify.notify('hi steve');
 });
 
 

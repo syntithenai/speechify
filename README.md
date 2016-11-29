@@ -25,7 +25,17 @@ $.fn.speechify.speak('short sentence');
 		
 TODO
 ===========
-grammars see below		
+[] to wrap OR options
+() for optional
+subvocabularies assigned to variables
+
+* clarify priorities
+? ban $var in first position
+? exact match as priority
+? longest match priortiy
+
+* partial match feedback -> grammar path to string
+? full list of possibile or close matches ? for which the recognised text is incomplete
 		
 		
 		

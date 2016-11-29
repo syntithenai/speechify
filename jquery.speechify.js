@@ -18,19 +18,12 @@ function SpeechifyGrammarException(message) {
 	this.message = message;
 }
 
-
-var SpeechifyGrammar = function SpeechifyGrammar(texts,callback,contextGrammars) {
+var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 	this.texts = texts;
-	this.contextGrammars = contextGrammars;
 	this.callback = callback;
 };
 
 ;(function($) {
-	var methods={
-		init : function(options) {
-			pluginDOM=this;
-			options=$.extend({forceHttps:true,'relPath':''},options);
-			//console.log(options);
 			var imageSearch;
 			var recognising=false;
 			var pendingCommand=false;
@@ -39,20 +32,8 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback,contextGrammars)
 			var captureType='';
 			var captureTarget=null;
 			//var lastStartedAt = 0;
-			if (options.forceHttps) {
-				//if (window.location.protocol!='https:') window.location='https://'+window.location.hostname+window.location.pathname; 
-			} 
-			
-			var contextGrammars = {}
-			var grammars=$.extend({},options.grammars);
-			var activeGrammars = {};
-			addGrammars(grammars,activeGrammars);
-			console.log(['GRAMMARS',grammars]);
-			console.log(['COLLATED',activeGrammars[0],activeGrammars]);
-			
 			
 			// PRIVATE FUNCTIONS
-
 			function isVariable(word) {
 				if (word.substr(0,1) == "$") {
 					return true;
@@ -93,29 +74,11 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback,contextGrammars)
 				}
 			}
 			
-			function hasOptionalNodes(current) {
-				var nodes = getOptionalNodes(current);
-				return (nodes.length > 0) ;
-			}
-			
-			function getOptionalNodes(current) {
-				var variables = [];
-				for (name in current) {
-					if (name.slice(0,1) == "(" && name.slice(-1) == ")" ) {
-						variables.push(name);
-					}
-				}
-				return variables;
-			}
+
 			function isLastTranscriptToken(tokens,index) {
 				return (i === (parts.length -1));
 			}
 			
-			
-			
-			function addGrammarToNode(transcript,node) {
-				
-			}
 			
 			/**
 			 * Traverse the grammar tree by moving the current pointer to the subtree
@@ -125,8 +88,8 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback,contextGrammars)
 			 * @ return object - tree node after traversal or creation.
 			 */	
 			function traverseGrammar(parts,current,word,grammar) {
-				console.log(['TGR',parts,current,word]);
-				if (word.trim().length>0) {
+				//console.log(['TGR',parts,current,word]);
+				if (word && typeof word == "string" && word.trim().length>0) {
 					 // add grammar with this word
 					// traverse tree
 					if (current.hasOwnProperty(word)) {
@@ -146,58 +109,137 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback,contextGrammars)
 			}
 			
 			/**
-			 * Add the first token of rule to the current tree node and 
-			 * traverse to the new node.
-			 * Call recursively until rule is empty.
+			 * Add a rule to global grammar.
+			 * Called recursively with gradually shorter rule and a current 
+			 * node that the rest of the rule is added to.
+			 * The rule is split by spaces and each token is another level 
+			 * of depth added to the grammar tree.
+			 * [] are used to indicate optional in a rule
+			 * [aaa|bbb|ccc]  vertical bar | is used to provide OR cases
+			 *  
+			 * @param rule - string containing remaining rule definition
+			 * @param grammar - tree of all grammars added 
+			 * @param current - current node in grammar that the remaining rule parts are added to.
 			 */
 			function addGrammarRecursive(rule,grammar,current) {
 				var parts=rule.split(' ');
 				var word = parts[0];
-				// is this token optional
+				// OPTIONAL GROUPING
+				// is this and option token with no spaces
 				if (word.slice(0,1) == "[" && word.slice(-1) == "]" ) {
-					// extra head to tree iteration without this token
-					var current2 = current;
-					addGrammarRecursive(parts.slice(1).join(" "),grammar,current2);
+					// split on vertical bar for options
+					wordOptions = word.slice(1,-1).split("|");
+					for (  i = 0; i < wordOptions.length; i++) {
+						// extra head to tree iteration with this wordOption
+						var current2 = current;
+						current2 = traverseGrammar(parts,current2,wordOptions[i],grammar);
+						addGrammarRecursive( parts.slice(1).join(" "),grammar,current2);
+					}
+					// and extra head without this token
+					var current3 = current;
+					current3 = traverseGrammar(parts,current3,wordOptions[i],grammar);
+					addGrammarRecursive(parts.slice(1).join(" "),grammar,current3);
 					
-					// process the optional word as a normal token too
-					word = word.slice(1,-1); 
+				// where there are spaces inside the brackets, collate the parts
 				} else if (word.slice(0,1) == "[") { 
 					// iterate tokens looking for close
 					//console.log(['unfinished start']);
 					var i = 0
+					// seek end bracket
 					for (  i = 0; i < parts.length && parts[i].slice(-1) != "]"; i++) {
 						
 					}
+					var current2 = current;
+					var inside = parts.slice(0,i+1);
+					var after = parts.slice(i+1);
 					//console.log(['unfinished end',parts.length,i]);
 					if (i == parts.length) throw new SpeechifyGrammarException('Missing end bracket ]') ;
-					var multiToken = parts.slice(0,i+1).join(" ").split("|");
-					console.log(['unfinished MM',multiToken]);
-					multiToken[0] = multiToken[0].slice(1);
-					multiToken[multiToken.length -1] = multiToken[multiToken.length -1].slice(0,-1);
-					// add a grammar for each | OR option
-					var j = 0;
-					for ( j = 0; j < multiToken.length; j++) {
-						// new rule 
-						var tempRule = multiToken[j].trim();
-						if (parts.length > (i + 1)) {
-							tempRule = tempRule + ' ' + parts.slice(i + 1).join(' ');
+					var wordOptions = inside.join(" ").slice(1,-1).split("|");
+					//console.log(['unfinished MM',wordOptions,inside,after]);
+					// split on vertical bar for options
+					for (  i = 0; i < wordOptions.length; i++) {
+						// check for multi token (space)
+						if (wordOptions[i].split(' ').length >1) {
+							addGrammarRecursive(wordOptions[i] + ' ' + after.join(" "),grammar,current2);
+						} else {
+						// extra head to tree iteration with this wordOption
+							var current3 = current;
+							current3 = traverseGrammar(parts,current3,wordOptions[i],grammar);
+							addGrammarRecursive( after.join(" "),grammar,current3);
 						}
-						console.log(['temprule',tempRule,multiToken[i]]);
-						var current2 = current;
-						addGrammarRecursive(tempRule,current2,grammar);
 					}
-					// add a grammar that skips this token
+					// and extra head without this token
 					var current3 = current;
-					addGrammarRecursive(parts.slice(1).join(" "),grammar,current3);
+					addGrammarRecursive(after.join(" "),grammar,current3);
+				// NON OPTIONAL GROUPING
+				// is this and option token with no spaces
+				} else if (word.slice(0,1) == "(" && word.slice(-1) == ")" ) {
+					// split on vertical bar for options
+					wordOptions = word.slice(1,-1).split("|");
+					for (  i = 0; i < wordOptions.length; i++) {
+						// extra head to tree iteration with this wordOption
+						var current2 = current;
+						current2 = traverseGrammar(parts,current2,wordOptions[i],grammar);
+						addGrammarRecursive( parts.slice(1).join(" "),grammar,current2);
+					}
+				// where there are spaces inside the brackets, collate the parts
+				} else if (word.slice(0,1) == "(") { 
+					// iterate tokens looking for close
+					//console.log(['unfinished start']);
+					var i = 0;
+					var depth = 0;
+					// seek end bracket
+					for (  i = 0; i < parts.length && parts[i].slice(-1) != ")" && (depth == 0 || i >= parts.length) ; i++) {
+						// allow for nested brackets 
+						if (parts[i].indexOf("(") !== -1){
+							depth++;
+						}
+						if (parts[i].indexOf(")") !== -1) {
+							depth--;
+						}
+					}
+					// slice it up based on the last matching depth bracket
+					var current2 = current;
+					var inside = parts.slice(0,i+1);
+					var after = parts.slice(i+1);
+					//console.log(['unfinished end',parts.length,i]);
+					if (i == parts.length) throw new SpeechifyGrammarException('Missing end bracket ]') ;
+					var wordOptions = inside.join(" ").slice(1,-1).split("|");
+					//console.log(['unfinished MM',wordOptions,inside,after]);
+					// split on vertical bar for options
+					for (  i = 0; i < wordOptions.length; i++) {
+						// check for multi token (space)
+						if (wordOptions[i].split(' ').length >1) {
+							addGrammarRecursive(wordOptions[i] + ' ' + after.join(" "),grammar,current2);
+						} else {
+						// extra head to tree iteration with this wordOption
+							var current3 = current;
+							current3 = traverseGrammar(parts,current3,wordOptions[i],grammar);
+							addGrammarRecursive( after.join(" "),grammar,current3);
+						}
+					}
+				// NO GROUPING BUT POSSIBLY SINGLE TOKEN OPTIONS
+				} else {
+					// split on vertical bar for options
+					wordOptions = word.split("|");
+					for (  i = 0; i < wordOptions.length; i++) {
+						// extra head to tree iteration with this wordOption
+						var current2 = current;
+						current2 = traverseGrammar(parts,current2,wordOptions[i],grammar);
+						if (parts.length>1) {
+							addGrammarRecursive( parts.slice(1).join(" "),grammar,current2);
+						}
+					}
 					
+					//console.log(['AGR',rule,current]);
+					// process this token
+					//current = traverseGrammar(parts,current,word,grammar);
+					//console.log(['AGR2',current]);
+					//if (parts.length>1) {
+					//	addGrammarRecursive(parts.slice(1).join(" "),grammar,current);
+					//}
 				}
-				//console.log(['AGR',rule,current]);
-				// process this token
-				current = traverseGrammar(parts,current,word,grammar);
-				//console.log(['AGR2',current]);
-				if (parts.length>1) {
-					addGrammarRecursive(parts.slice(1).join(" "),grammar,current);
-				}
+				
 			}
 			
 			/*******************
@@ -211,19 +253,17 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback,contextGrammars)
 						addGrammarRecursive(rule,grammar,activeGrammars);
 					});
 				});
-				console.log(['active grammar',activeGrammars]);
-				
+				//console.log(['active grammar',activeGrammars]);
 			} 
 
 			/**
-			 * Traverse the active grammars tree using transcript tokens
-			 * allow for variables and optional tokens
-			 * TODO there must be a fixed token between variables
+			 * Recursively traverse the active grammars tree using transcript tokens.
+			 * Allow for variables and optional tokens
 			 */
 			function searchForGrammar(transcript,activeGrammars,variables,partialMatchCallback,successCallback) {
 				console.log(['searchForGrammar',transcript,activeGrammars]);
 				if (activeGrammars != null && transcript && transcript.length > 0)  {
-					//console.log(['REALLY searchForGrammar']);
+					console.log(['REALLY searchForGrammar']);
 					
 					var parts = transcript.split(" ");
 					var current = activeGrammars;
@@ -234,55 +274,35 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback,contextGrammars)
 						// first recurse (deepest first)
 						searchForGrammar(parts.slice(1).join(" "),activeGrammars[word],variables,partialMatchCallback,successCallback);
 						// no match deeper in the tree then check if there is a match here
-						if (isGrammarNode(activeGrammars[word])) {
+						console.log(['ISGRAMMAR',isGrammarNode(activeGrammars[word]),word,activeGrammars,parts]);
+						if (isGrammarNode(activeGrammars[word]) && parts.length < 2) {
 							successCallback(activeGrammars[word]['::GRAMMAR::'],variables);
 						}
-					// optional version ??
 					}
-					if (false && hasOptionalNodes(current)) {
-						var optionalNodes = getOptionalNodes(current);
-						//console.log(['HAS OPTIONAL NODES ',optionalNodes]);
-						for (optionalNodeKey in optionalNodes) {
-							var optionalNode = optionalNodes[optionalNodeKey];
-							// is present, search deeper
-							if ("("+word+")" == optionalNode) {
-								//console.log(['IS PRESENT']);
-								searchForGrammar(parts.slice(1).join(" "),activeGrammars["("+word+")"],variables,partialMatchCallback,successCallback);
-								if (isGrammarNode(activeGrammars["("+word+")"])) {
-									successCallback(activeGrammars["("+word+")"]['::GRAMMAR::'],variables);
-								}
-							// not present, search deeper from here
-							} else {
-								//console.log(['not PRESENT']);
-								if (parts.length>0) {
-									//console.log(['not PRESENT check deeper']);
-									searchForGrammar(parts.slice(1).join(" "),activeGrammars[optionalNode],variables,partialMatchCallback,successCallback);
-								}
-								if (isGrammarNode(activeGrammars[optionalNode])) {
-									//console.log(['not PRESENT here OK ',optionalNode,activeGrammars[optionalNode],activeGrammars]);
-									successCallback(activeGrammars[optionalNode]['::GRAMMAR::'],variables);
-								}
-							}
-							
-						}
-					// otherwise are there any variables to try
-					}
+					
+					// otherwise are there any variables to try at this branch in the tree
 					if (hasVariable(current)) {
 						var currentVariables = getVariables(current);
 						console.log(['HAS VARIABLES ',currentVariables]);
 						// iterate variables
 						for (var theVar in currentVariables) {
 							var currentVar=currentVariables[theVar];
-							// iterate all end slices of the transcript
+							// iterate end slice of the transcript
 							var theRest = parts.slice(1);
-							variables[currentVar] = parts.slice(0,1).join(" ");
-							while (theRest.length>0) {
-								console.log(['TRY TRANSCRIPT SLICE',theRest,currentVar,current[currentVar]])
+							console.log(['PROCESS VARIABLE PARTS',parts]);
+							//
+							console.log(['PROCESS VARIABLE',variables[currentVar],currentVar,theRest,variables]);
+							
+							searchForGrammar(theRest.join(" "),current[currentVar],variables,partialMatchCallback,function (grammar,variables) { variables[currentVar] = parts.slice(0,1).join(" "); successCallback(grammar,variables); } );
+								
+							/*while (theRest.length>0) {
+								console.log(['TRY TRANSCRIPT SLICE',theRest.join(" "),currentVar,current[currentVar]])
 								// recursively searching for grammars
 								searchForGrammar(theRest.join(" "),current[currentVar],variables,partialMatchCallback,successCallback);
-								theRest = theRest.slice(1);
 								variables[currentVar] = variables[currentVar] + ' '+ theRest.slice(0,1).join(" ");
-							}
+								theRest = theRest.slice(1);
+								console.log(['DONE TRY TRANSCRIPT SLICE',theRest,currentVar,current[currentVar]])
+							}*/
 							console.log(['no kids found for',currentVar]);
 							// if  nothing more specific found, is the variable a grammar node ?
 							if (isGrammarNode(current[currentVar])) {
@@ -311,7 +331,8 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback,contextGrammars)
 				// require parameter values
 				//console.log(['AG',activeGrammars]);
 				if (transcript && typeof activeGrammars == "object"  && Object.keys(activeGrammars).length > 0) {
-					console.log(['START PROCESS TRANSCRIPT']);
+					transcript = transcript.trim();
+					console.log(['START PROCESS TRANSCRIPT -'+transcript]);
 					var variables = {};
 					// start recursive seek grammar
 					try {
@@ -332,8 +353,8 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback,contextGrammars)
 						console.log(['FAIL']);
 					} catch (e) {
 						if (e instanceof SpeechifySuccessException) {
-							console.log(['SUCCESS',e.grammar,e.variables]);
-							e.grammar.callback(e.variables);
+							//console.log(['SUCCESS',e.grammar,e.variables]);
+							e.grammar.callback([e.grammar,e.variables]);
 						} else {
 							console.log(['GENERAL ERROR',e]);
 						}
@@ -370,6 +391,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback,contextGrammars)
 			}
 			
 			function startRecognising() {
+				return;
 				//console.log('start');
 				// if we're already listening, just restart the speech handler
 				try {
@@ -492,6 +514,59 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback,contextGrammars)
 
 				return (r + '000').slice(0, 4).toUpperCase();
 			};
+
+	// END PRIVATE METHODS
+	
+	// PUBLIC METHODS
+	var activeGrammars = {};
+	var methods={
+		runTests : function(grammarStrings,testSuite) {
+			clog = console.log;
+			console.log=function() {}
+			var activeGrammars = {};
+			console.log('run tests now');
+			testCallbackResult='';
+			var testCallback = function(res) {
+				grammar = res[0];
+				variables= res[1];
+				console.log(['TEST callback',grammar,variables]);
+				testCallbackResult={key: grammar.texts[0], variables:variables};
+			}
+			var testGrammars=[];
+			for (i in grammarStrings) {
+				testGrammars.push(new SpeechifyGrammar([grammarStrings[i]],testCallback));
+			}
+			
+			console.log('run tests',testGrammars);
+			addGrammars(testGrammars,activeGrammars);
+			console.log('run tests active is ',activeGrammars);
+			for (i in testSuite) {
+				//console.log(['exec test',testSuite[i]]);
+				testCallbackResult='::FAIL::';
+				processTranscript(testSuite[i]['transcript'],activeGrammars);
+		//		if (testCallbackResult == testSuite[i]['result']) {
+		// OK
+		//		}
+				clog(['TEST RESULT',JSON.stringify(testCallbackResult) == JSON.stringify(testSuite[i]['result']),'Tr',testSuite[i]['transcript'],'Expect',JSON.stringify(testSuite[i]['result']),'Got',JSON.stringify(testCallbackResult)]);
+			}
+			console.log=clog;
+			
+		},
+		init : function(options) {
+			pluginDOM=this;
+			options=$.extend({forceHttps:true,'relPath':''},options);
+			//console.log(options);
+			if (options.forceHttps) {
+				//if (window.location.protocol!='https:') window.location='https://'+window.location.hostname+window.location.pathname; 
+			} 
+			
+			var contextGrammars = {}
+			var grammars=$.extend({},options.grammars);
+			addGrammars(grammars,activeGrammars);
+			//console.log(['GRAMMARS',grammars]);
+			//console.log(['COLLATED',activeGrammars['check']['for']]);
+			
+			
 			
 			// PLUGIN INIT STARTS HERE
 			
@@ -527,16 +602,16 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback,contextGrammars)
 								//console.log(['regnising OKdoke']);
 								// HANDLE EDITABLE TEXT FIELDS
 								if ($('input[type=text]:focus').length>0) {
-									console.log(['focus']);
+									//console.log(['focus']);
 									$('input[type=text]:focus').val(transcript)
 								} else if ($('textarea:focus').length>0) {
-									console.log(['tfocus']);
+									//console.log(['tfocus']);
 									var sel = getInputSelection($('textarea:focus')[0]);
 									var val = $($('textarea:focus')).val();
 									//$(captureTarget).data('oldval',val);
 									$($('textarea:focus')).val(joinThreeStrings($.trim(val.slice(0, sel.start)),transcript,$.trim(val.slice(sel.end))));
 								} else if ($('*[contenteditable=true]:focus').length>0) {
-									console.log(['cfocus']);
+									//console.log(['cfocus']);
 									function replaceSelectedText(replacementText) {
 										var sel, range;
 										if (window.getSelection) {
@@ -596,6 +671,8 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback,contextGrammars)
 			} catch (e) {
 				console.log(e.message);
 			}
+			
+			return methods;
 		}
 	};
 

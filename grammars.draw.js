@@ -1,4 +1,23 @@
-/*	[['check for $whatever'],
+/*
+  
+
+
+
+  
+ * */
+
+var grammarTree = [
+	[['check for cats [like that now|like that] please'], //[$adj] 
+		function(searchText) {
+			console.log(['DONE kat check',searchText]);
+		}
+	],
+/*	[['check for dogs'],
+		function(searchText) {
+			console.log('DONE god check');
+		}
+	],
+	[['check for $whatever'],
 		function(searchText) {
 			console.log(['DONE SEARCH',searchText['$whatever']]);
 			//window.open('https://www.google.com.au/webhp?sourceid=chrome-instant#q=' + searchText);
@@ -71,23 +90,9 @@
 		}
 	]
 */
-
-var grammarTree = [
-// [like that now|like that] please
-	[['check for [blue|$desc red] cats'], //[$adj] 
-		function(searchText) {
-			console.log(['DONE kat check',searchText]);
-		}
-	],
-	[['check for dogs'],
-		function(searchText) {
-			console.log('DONE god check');
-		}
-	],
-
 ];
 var grammars=[];
 for (i in grammarTree) {
-	grammars.push(new SpeechifyGrammar(grammarTree[i][0],grammarTree[i][1]));
+	grammars.push(new SpeechifyGrammar(grammarTree[i][0],grammarTree[i][1],grammarTree[i][2]));
 }
 //console.log(grammars);
