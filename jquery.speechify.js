@@ -126,6 +126,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				var word = parts[0];
 				// OPTIONAL GROUPING
 				// is this and option token with no spaces
+				//console.log(['AGR',rule,parts,word]);
 				if (word.slice(0,1) == "[" && word.slice(-1) == "]" ) {
 					// split on vertical bar for options
 					wordOptions = word.slice(1,-1).split("|");
@@ -183,40 +184,75 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 						addGrammarRecursive( parts.slice(1).join(" "),grammar,current2);
 					}
 				// where there are spaces inside the brackets, collate the parts
-				} else if (word.slice(0,1) == "(") { 
-					// iterate tokens looking for close
-					//console.log(['unfinished start']);
+				} else if (word.indexOf("(") !== -1) { 
+					// extract text until the matching close bracket
+					//console.log(['START (',parts.join(" "),parts]);
+					
 					var i = 0;
 					var depth = 0;
-					// seek end bracket
-					for (  i = 0; i < parts.length && parts[i].slice(-1) != ")" && (depth == 0 || i >= parts.length) ; i++) {
-						// allow for nested brackets 
-						if (parts[i].indexOf("(") !== -1){
+					var start=true;
+					var combined = parts.join(" ");
+					for (  i = 0; (i < combined.length && depth > 0) || start  ; i++) {
+						start = false;
+						//clog(["I",i,depth]);
+						// allow for nested brackets. inner bracket must be space seperated ie ( (joe|fred) (ate|slept) now)
+						if (combined.charAt(i) == "("){
 							depth++;
+							//clog(["depth plus"]);
 						}
-						if (parts[i].indexOf(")") !== -1) {
+						if (combined.charAt(i) == ")") {
 							depth--;
+							//clog(["depth minus"]);
 						}
 					}
 					// slice it up based on the last matching depth bracket
 					var current2 = current;
-					var inside = parts.slice(0,i+1);
-					var after = parts.slice(i+1);
+					var inside = combined.slice(0,i+1).trim().split(" ");
+					var after = combined.slice(i+1).trim().split(" ");
 					//console.log(['unfinished end',parts.length,i]);
-					if (i == parts.length) throw new SpeechifyGrammarException('Missing end bracket ]') ;
-					var wordOptions = inside.join(" ").slice(1,-1).split("|");
-					//console.log(['unfinished MM',wordOptions,inside,after]);
-					// split on vertical bar for options
-					for (  i = 0; i < wordOptions.length; i++) {
-						// check for multi token (space)
-						if (wordOptions[i].split(' ').length >1) {
-							addGrammarRecursive(wordOptions[i] + ' ' + after.join(" "),grammar,current2);
+					if (i == parts.length) throw new SpeechifyGrammarException('Missing end bracket ) - '+parts.join(" ")) ;
+					
+					var insideString = inside.join(" ").trim().slice(1,-1);
+					var orParts =[];
+					orParts[0]='';
+					var orPartsIndex = 0;
+					var depth = 0;
+					// initialise for text append
+					// iterate characters collating by | divisions 
+					// dont start new collation inside brackets ()
+					//console.log(["inside str",insideString]);
+					for (  var i = 0; i < insideString.length; i++) {
+						// allow for nested brackets 
+						if (insideString.charAt(i) == "(") {
+							depth++;
+							//clog(["depth plus"]);
+							orParts[orPartsIndex] += insideString.charAt(i);
+						} else if (insideString.charAt(i) == ")") {
+							depth--;
+							//clog(["depth minus"]);
+							orParts[orPartsIndex] += insideString.charAt(i);
+						} else if (depth == 0 && insideString.charAt(i) == "|") {
+							//clog(["next"]);
+							orPartsIndex++;
+							orParts[orPartsIndex]='';
 						} else {
-						// extra head to tree iteration with this wordOption
-							var current3 = current;
-							current3 = traverseGrammar(parts,current3,wordOptions[i],grammar);
-							addGrammarRecursive( after.join(" "),grammar,current3);
+							//clog(["append"]);
+							orParts[orPartsIndex] += insideString.charAt(i);
 						}
+						//clog(['done',i]);
+					}
+					//console.log(['NWO',orParts,after]);
+					for (  i = 0; i < orParts.length; i++) {
+						addGrammarRecursive([orParts[i],after.join(" ")].join(" "),grammar,current2);
+						// traverse a single token 
+						/*if (orParts[i].indexOf(" ") ==-1 && orParts[i].indexOf("|") ==-1 && orParts[i].indexOf("(") ==-1 && orParts[i].indexOf(")") ==-1 && orParts[i].indexOf("[") ==-1 && orParts[i].indexOf("]") ==-1) {
+							var current3 = current;
+							//current3 = traverseGrammar(parts,current3,orParts[i],grammar);
+							addGrammarRecursive( after.join(" "),grammar,current3);
+						} else  {
+							addGrammarRecursive([orParts[i],after.join(" ")].join(" "),grammar,current2);
+						}*/
+					
 					}
 				// NO GROUPING BUT POSSIBLY SINGLE TOKEN OPTIONS
 				} else {
@@ -250,6 +286,9 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				$.each(grammars,function(grammarKey,grammar) {
 				//console.log(['grammar',grammar]);
 					$.each(grammar.texts,function(ruleKey,rule) {
+						// TODO extract variable rules $color(red|blue|green) -> $variableRules['$color']=red|blue|green; as grammar tree
+						// TODO COnST replacements for common features eg __DATE__, __COLOR__
+						// AND only call success if variable matches it's rules.
 						addGrammarRecursive(rule,grammar,activeGrammars);
 					});
 				});
@@ -522,7 +561,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 	var methods={
 		runTests : function(grammarStrings,testSuite) {
 			clog = console.log;
-			console.log=function() {}
+			//console.log=function() {}
 			var activeGrammars = {};
 			console.log('run tests now');
 			testCallbackResult='';
@@ -564,7 +603,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			var grammars=$.extend({},options.grammars);
 			addGrammars(grammars,activeGrammars);
 			//console.log(['GRAMMARS',grammars]);
-			//console.log(['COLLATED',activeGrammars['check']['for']]);
+			console.log(['COLLATED',activeGrammars]);
 			
 			
 			
