@@ -90,7 +90,17 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			function traverseGrammar(parts,current,word,grammar) {
 				//console.log(['TGR',parts,current,word]);
 				if (word && typeof word == "string" && word.trim().length>0) {
-					 // add grammar with this word
+					// variable ??
+					var variableGrammar='';
+					var start = word.indexOf("{");
+					var end = word.indexOf("}");
+					console.log(['TGRA',word.slice(0,1),start,end]);
+					if (word.slice(0,1)=="$" && start !== -1 && end !== -1 ) {
+						variableGrammar = word.slice(start,end);
+						word = word.slice(0,start);
+					}
+					console.log(['TGR',parts,current,word,variableGrammar]);
+					// add grammar with this word
 					// traverse tree
 					if (current.hasOwnProperty(word)) {
 						current = current[word];
@@ -100,6 +110,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 						current[word] = {};
 						current = current[word];
 					}
+					
 				}
 				// last token, assign grammar
 				if (parts.length == 1) {
@@ -176,6 +187,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				// is this and option token with no spaces
 				} else if (word.slice(0,1) == "(" && word.slice(-1) == ")" ) {
 					// split on vertical bar for options
+					// TODO DON'T BREAK ON variable {}
 					wordOptions = word.slice(1,-1).split("|");
 					for (  i = 0; i < wordOptions.length; i++) {
 						// extra head to tree iteration with this wordOption
@@ -223,11 +235,11 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 					//console.log(["inside str",insideString]);
 					for (  var i = 0; i < insideString.length; i++) {
 						// allow for nested brackets 
-						if (insideString.charAt(i) == "(") {
+						if (insideString.charAt(i) == "(" || insideString.charAt(i) == "{") {
 							depth++;
 							//clog(["depth plus"]);
 							orParts[orPartsIndex] += insideString.charAt(i);
-						} else if (insideString.charAt(i) == ")") {
+						} else if (insideString.charAt(i) == ")" || insideString.charAt(i) == "}") {
 							depth--;
 							//clog(["depth minus"]);
 							orParts[orPartsIndex] += insideString.charAt(i);
@@ -257,8 +269,42 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				// NO GROUPING BUT POSSIBLY SINGLE TOKEN OPTIONS
 				} else {
 					// split on vertical bar for options
-					wordOptions = word.split("|");
+					var wordOptions =[];
+					wordOptions[0]='';
+					var wordOptionsIndex = 0;
+					var depth = 0;
+					// initialise for text append
+					// iterate characters collating by | divisions 
+					// dont start new collation inside brackets ()
+					//console.log(["inside str",insideString]);
+					for (  var i = 0; i < word.length; i++) {
+						// allow for nested brackets 
+						if (word.charAt(i) == "(" || word.charAt(i) == "{") {
+							depth++;
+							wordOptions[wordOptionsIndex] += word.charAt(i);
+						} else if (word.charAt(i) == ")" || word.charAt(i) == "}") {
+							depth--;
+							wordOptions[wordOptionsIndex] += word.charAt(i);
+						} else if (depth == 0 && word.charAt(i) == "|") {
+							wordOptionsIndex++;
+							wordOptions[wordOptionsIndex]='';
+						} else {
+							wordOptions[wordOptionsIndex] += word.charAt(i);
+						}
+					}
+					
+					//wordOptions = word.split("|");
+					//console.log(['WO',wordOptions]);
 					for (  i = 0; i < wordOptions.length; i++) {
+						// extract variable grammar
+						var start = wordOptions[i].indexOf("{");
+						var end =wordOptions[i].indexOf("}");
+						var variableGrammar=null;
+						if (wordOptions[i].slice(0,1) == "$" && start !=-1 && end !=-1) {
+							variableGrammar = wordOptions[i].slice(start+1,end);
+							wordOptions[i]= wordOptions[i].slice(0,start);
+						}
+						//console.log(['eek',wordOptions[i],variableGrammar]);
 						// extra head to tree iteration with this wordOption
 						var current2 = current;
 						current2 = traverseGrammar(parts,current2,wordOptions[i],grammar);
@@ -332,23 +378,28 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 							//
 							console.log(['PROCESS VARIABLE',variables[currentVar],currentVar,theRest,variables]);
 							
-							searchForGrammar(theRest.join(" "),current[currentVar],variables,partialMatchCallback,function (grammar,variables) { variables[currentVar] = parts.slice(0,1).join(" "); successCallback(grammar,variables); } );
-								
-							/*while (theRest.length>0) {
-								console.log(['TRY TRANSCRIPT SLICE',theRest.join(" "),currentVar,current[currentVar]])
-								// recursively searching for grammars
-								searchForGrammar(theRest.join(" "),current[currentVar],variables,partialMatchCallback,successCallback);
-								variables[currentVar] = variables[currentVar] + ' '+ theRest.slice(0,1).join(" ");
-								theRest = theRest.slice(1);
-								console.log(['DONE TRY TRANSCRIPT SLICE',theRest,currentVar,current[currentVar]])
-							}*/
-							console.log(['no kids found for',currentVar]);
-							// if  nothing more specific found, is the variable a grammar node ?
-							if (isGrammarNode(current[currentVar])) {
-								console.log(['FIN: variable last']);
-								variables[currentVar]=parts.join(' ');
-								successCallback(current[currentVar]['::GRAMMAR::'],variables);
-							}
+							// if variable has subgrammar and match 
+								// success
+							
+							
+								searchForGrammar(theRest.join(" "),current[currentVar],variables,partialMatchCallback,function (grammar,variables) { variables[currentVar] = parts.slice(0,1).join(" "); successCallback(grammar,variables); } );
+									
+								/*while (theRest.length>0) {
+									console.log(['TRY TRANSCRIPT SLICE',theRest.join(" "),currentVar,current[currentVar]])
+									// recursively searching for grammars
+									searchForGrammar(theRest.join(" "),current[currentVar],variables,partialMatchCallback,successCallback);
+									variables[currentVar] = variables[currentVar] + ' '+ theRest.slice(0,1).join(" ");
+									theRest = theRest.slice(1);
+									console.log(['DONE TRY TRANSCRIPT SLICE',theRest,currentVar,current[currentVar]])
+								}*/
+								console.log(['no kids found for',currentVar]);
+								// if  nothing more specific found, is the variable a grammar node ?
+								if (isGrammarNode(current[currentVar])) {
+									console.log(['FIN: variable last']);
+									variables[currentVar]=parts.join(' ');
+									successCallback(current[currentVar]['::GRAMMAR::'],variables);
+								}
+							// end if
 						}
 					}
 				}
