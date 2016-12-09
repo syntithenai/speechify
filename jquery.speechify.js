@@ -81,6 +81,10 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			
 			
 			/**
+			 * GRAMMAR INDEXING FUNCTIONS
+			 ***/
+		
+			/**
 			 * Traverse the grammar tree by moving the current pointer to the subtree
 			 * matching word or creating a new subtree element for word.
 			 * Where the word is the last token in the parts, assign the SpeechifyGrammar instance to 
@@ -88,9 +92,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			 * @ return object - tree node after traversal or creation.
 			 */	
 			function traverseGrammar(parts,current,word,grammar) {
-				//console.log(['TGR',parts,current,word]);
 				if (word && typeof word == "string" && word.trim().length>0) {
-					//console.log(['TGR',parts,current,word]);
 					// add grammar with this word
 					// traverse tree
 					if (current.hasOwnProperty(word)) {
@@ -146,7 +148,6 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				// where there are spaces inside the brackets, collate the parts
 				} else if (word.slice(0,1) == "[") { 
 					// iterate tokens looking for close
-					//console.log(['unfinished start']);
 					var i = 0
 					// seek end bracket
 					for (  i = 0; i < parts.length && parts[i].slice(-1) != "]"; i++) {
@@ -155,10 +156,8 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 					var current2 = current;
 					var inside = parts.slice(0,i+1);
 					var after = parts.slice(i+1);
-					//console.log(['unfinished end',parts.length,i]);
 					if (i == parts.length) throw new SpeechifyGrammarException('Missing end bracket ]') ;
 					var wordOptions = inside.join(" ").slice(1,-1).split("|");
-					//console.log(['unfinished MM',wordOptions,inside,after]);
 					// split on vertical bar for options
 					for (  i = 0; i < wordOptions.length; i++) {
 						// check for multi token (space)
@@ -178,7 +177,6 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				// is this and option token with no spaces
 				} else if (word.slice(0,1) == "(" && word.slice(-1) == ")" ) {
 					// split on vertical bar for options
-					// TODO DON'T BREAK ON variable {}
 					wordOptions = word.slice(1,-1).split("|");
 					for (  i = 0; i < wordOptions.length; i++) {
 						// extra head to tree iteration with this wordOption
@@ -189,30 +187,24 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				// where there are spaces inside the brackets, collate the parts
 				} else if (word.indexOf("(") !== -1) { 
 					// extract text until the matching close bracket
-					//console.log(['START (',parts.join(" "),parts]);
-					
 					var i = 0;
 					var depth = 0;
 					var start=true;
 					var combined = parts.join(" ");
 					for (  i = 0; (i < combined.length && depth > 0) || start  ; i++) {
 						start = false;
-						//clog(["I",i,depth]);
 						// allow for nested brackets. inner bracket must be space seperated ie ( (joe|fred) (ate|slept) now)
 						if (combined.charAt(i) == "("){
 							depth++;
-							//clog(["depth plus"]);
 						}
 						if (combined.charAt(i) == ")") {
 							depth--;
-							//clog(["depth minus"]);
 						}
 					}
 					// slice it up based on the last matching depth bracket
 					var current2 = current;
 					var inside = combined.slice(0,i+1).trim().split(" ");
 					var after = combined.slice(i+1).trim().split(" ");
-					//console.log(['unfinished end',parts.length,i]);
 					if (i == parts.length) throw new SpeechifyGrammarException('Missing end bracket ) - '+parts.join(" ")) ;
 					
 					var insideString = inside.join(" ").trim().slice(1,-1);
@@ -223,39 +215,23 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 					// initialise for text append
 					// iterate characters collating by | divisions 
 					// dont start new collation inside brackets ()
-					//console.log(["inside str",insideString]);
 					for (  var i = 0; i < insideString.length; i++) {
 						// allow for nested brackets 
 						if (insideString.charAt(i) == "(") {
 							depth++;
-							//clog(["depth plus"]);
 							orParts[orPartsIndex] += insideString.charAt(i);
 						} else if (insideString.charAt(i) == ")") {
 							depth--;
-							//clog(["depth minus"]);
 							orParts[orPartsIndex] += insideString.charAt(i);
 						} else if (depth == 0 && insideString.charAt(i) == "|") {
-							//clog(["next"]);
 							orPartsIndex++;
 							orParts[orPartsIndex]='';
 						} else {
-							//clog(["append"]);
 							orParts[orPartsIndex] += insideString.charAt(i);
 						}
-						//clog(['done',i]);
 					}
-					//console.log(['NWO',orParts,after]);
 					for (  i = 0; i < orParts.length; i++) {
 						addGrammarRecursive([orParts[i],after.join(" ")].join(" "),grammar,current2);
-						// traverse a single token 
-						/*if (orParts[i].indexOf(" ") ==-1 && orParts[i].indexOf("|") ==-1 && orParts[i].indexOf("(") ==-1 && orParts[i].indexOf(")") ==-1 && orParts[i].indexOf("[") ==-1 && orParts[i].indexOf("]") ==-1) {
-							var current3 = current;
-							//current3 = traverseGrammar(parts,current3,orParts[i],grammar);
-							addGrammarRecursive( after.join(" "),grammar,current3);
-						} else  {
-							addGrammarRecursive([orParts[i],after.join(" ")].join(" "),grammar,current2);
-						}*/
-					
 					}
 				// NO GROUPING BUT POSSIBLY SINGLE TOKEN OPTIONS
 				} else {
@@ -267,7 +243,6 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 					// initialise for text append
 					// iterate characters collating by | divisions 
 					// dont start new collation inside brackets ()
-					//console.log(["inside str",insideString]);
 					for (  var i = 0; i < word.length; i++) {
 						// allow for nested brackets 
 						if (word.charAt(i) == "(" ) {
@@ -284,8 +259,6 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 						}
 					}
 					
-					//wordOptions = word.split("|");
-					//console.log(['WO',wordOptions]);
 					for (  i = 0; i < wordOptions.length; i++) {
 						// extra head to tree iteration with this wordOption
 						var current2 = current;
@@ -305,9 +278,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			function addGrammars(grammars,activeGrammars)  {
 				// first extract all variable grammars
 				$.each(grammars,function(grammarKey,grammar) {
-				//console.log(['Pgrammar',grammar]);
 					$.each(grammar.texts,function(ruleKey,rule) {
-						//console.log(['Pgrammar R',ruleKey,rule]);
 						var found= true;
 						var breakOut = 0;
 						while (found && breakOut < 200) {
@@ -318,7 +289,6 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 							var cleanedRule = rule.slice(0,ruleStart) + rule.slice(ruleEnd + 1);
 							var varName = rule.slice(varStart,ruleStart);
 							var varRule = rule.slice(ruleStart + 1, ruleEnd );
-							//console.log(['GVa',varStart,ruleStart,ruleEnd,cleanedRule,varName,varRule]);
 							found = false;
 							if (varName.length > 1 && varRule.length > 0) {
 								// update the rule
@@ -334,23 +304,20 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 						//if () throw new SpeechifyGrammarException('balh');
 					});
 				});
-				//console.log(['variable grammar',variableGrammars]);
-
 				
 				// now map grammars into a tree
 				$.each(grammars,function(grammarKey,grammar) {
-				//console.log(['grammar',grammar]);
 					$.each(grammar.texts,function(ruleKey,rule) {
-						// TODO extract variable rules $color(red|blue|green) -> $variableRules['$color']=red|blue|green; as grammar tree
 						// TODO COnST replacements for common features eg __DATE__, __COLOR__
-						// AND only call success if variable matches it's rules.
 						addGrammarRecursive(rule,grammar,activeGrammars);
 					});
 				});
-				
-				//console.log(['active grammar',activeGrammars]);
 			} 
 
+			/**
+			 * LOOKUP FUNCTIONS
+			 ***/
+		
 			/**
 			 * Recursively traverse the active grammars tree using transcript tokens.
 			 * Allow for variables and optional tokens
@@ -369,7 +336,6 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 						// first recurse (deepest first)
 						searchForGrammar(parts.slice(1).join(" "),activeGrammars[word],variables,partialMatchCallback,successCallback);
 						// no match deeper in the tree then check if there is a match here
-						//console.log(['ISGRAMMAR',isGrammarNode(activeGrammars[word]),word,activeGrammars,parts]);
 						if (isGrammarNode(activeGrammars[word]) && parts.length < 2) {
 							successCallback(activeGrammars[word]['::GRAMMAR::'],variables);
 						}
@@ -378,36 +344,27 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 					// otherwise are there any variables to try at this branch in the tree
 					if (hasVariable(current)) {
 						var currentVariables = getVariables(current);
-						//console.log(['HAS VARIABLES ',currentVariables]);
 						// iterate variables
 						for (var theVar in currentVariables) {
 							var currentVar=currentVariables[theVar];
 							// iterate end slice of the transcript
 							var theRest = parts.slice(1);
-							//console.log(['PROCESS VARIABLE PARTS',parts]);
-							//
-							console.log(['PROCESS VARIABLE',currentVar,variableGrammars[currentVar],variables[currentVar],theRest,variables]);
-							
 							// if variable has subgrammar 
 							// assume the transcript is a reasonable length, split transcript by space and iterate sub head arrays
 							// where success, call remaining transcript with remaining grammar in this scope
 							if (variableGrammars.hasOwnProperty(currentVar)) {
-								console.log(['have var grammar']);
 								var breakout = false;
 								for (var i =0; i<= theRest.length && !breakout; i++) {
 									var transcriptSlice = word + " " + theRest.slice(0,(theRest.length - i )).join(" ").trim();
-									console.log(['try slice ',transcriptSlice,variableGrammars[currentVar]]);
 									searchForGrammar(transcriptSlice,variableGrammars[currentVar],variables,partialMatchCallback,
 										// success,found match on variable grammar with slice
 										function (grammar,variables) { 
-											console.log(['var grammar success',grammar,variables]);
 											// save variable
 											variables[currentVar] = transcriptSlice; 
 											// try for match on remainder of transcript 
 											var remainder = theRest.slice(theRest.length - i).join(" ");
 											searchForGrammar(remainder,current[currentVar],variables,partialMatchCallback,
 												function (grammar,variables) { 
-													console.log(['full success',grammar,variables]);
 													variables[currentVar] = parts.slice(0,1).join(" "); 
 													successCallback(grammar,variables); 
 												} 
@@ -419,21 +376,11 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 							} else {
 								searchForGrammar(theRest.join(" "),current[currentVar],variables,partialMatchCallback,function (grammar,variables) { variables[currentVar] = parts.slice(0,1).join(" "); successCallback(grammar,variables); } );
 							}	
-								/*while (theRest.length>0) {
-									console.log(['TRY TRANSCRIPT SLICE',theRest.join(" "),currentVar,current[currentVar]])
-									// recursively searching for grammars
-									searchForGrammar(theRest.join(" "),current[currentVar],variables,partialMatchCallback,successCallback);
-									variables[currentVar] = variables[currentVar] + ' '+ theRest.slice(0,1).join(" ");
-									theRest = theRest.slice(1);
-									console.log(['DONE TRY TRANSCRIPT SLICE',theRest,currentVar,current[currentVar]])
-								}*/
-								console.log(['no kids found for',currentVar]);
-								// if  nothing more specific found, is the variable a grammar node ?
-								if (isGrammarNode(current[currentVar])) {
-								//	console.log(['FIN: variable last']);
-									variables[currentVar]=parts.join(' ');
-									successCallback(current[currentVar]['::GRAMMAR::'],variables);
-								}
+							// if  nothing more specific found, is the variable a grammar node ?
+							if (isGrammarNode(current[currentVar])) {
+								variables[currentVar]=parts.join(' ');
+								successCallback(current[currentVar]['::GRAMMAR::'],variables);
+							}
 							// end if
 						}
 					}
@@ -454,10 +401,8 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			 */
 			function processTranscript(transcript,activeGrammars) {
 				// require parameter values
-				//console.log(['AG',activeGrammars]);
 				if (transcript && typeof activeGrammars == "object"  && Object.keys(activeGrammars).length > 0) {
 					transcript = transcript.trim();
-					//console.log(['START PROCESS TRANSCRIPT -'+transcript]);
 					var variables = {};
 					// start recursive seek grammar
 					try {
@@ -469,7 +414,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 							//	console.log(['PARTIAL',a,b]);
 							},
 							function (grammar,variables) {
-								console.log(['SUCCESS pre',grammar,variables]);
+								//console.log(['SUCCESS pre',grammar,variables]);
 								// abuse exceptions as break out from any recursive depth
 								throw new SpeechifySuccessException(grammar,variables);
 							}
@@ -478,7 +423,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 						console.log(['FAIL']);
 					} catch (e) {
 						if (e instanceof SpeechifySuccessException) {
-							console.log(['SUCCESS',e.grammar,e.variables]);
+							//console.log(['SUCCESS',e.grammar,e.variables]);
 							e.grammar.callback([e.grammar,e.variables]);
 						} else {
 							console.log(['GENERAL ERROR',e]);
@@ -712,12 +657,9 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				
 				
 				speechRecognitionHandler.onresult = function(event){
-				//	console.log(['RESULT',event.results,event]);
-							
 					for (var i = event.resultIndex; i < event.results.length; ++i) {
 						if (event.results[i].isFinal) {
 							transcript = $.trim(event.results[i][0].transcript);
-							//console.log('PRE:'+transcript);
 							// what command
 							if (transcript=="start listening" || transcript=="wake up") {
 								startRecognising();
@@ -726,19 +668,15 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 							} else if (transcript=="stop listening") {
 								stopRecognising();
 							} else if (recognising) {
-								//console.log(['regnising OKdoke']);
 								// HANDLE EDITABLE TEXT FIELDS
 								if ($('input[type=text]:focus').length>0) {
-									//console.log(['focus']);
 									$('input[type=text]:focus').val(transcript)
 								} else if ($('textarea:focus').length>0) {
-									//console.log(['tfocus']);
 									var sel = getInputSelection($('textarea:focus')[0]);
 									var val = $($('textarea:focus')).val();
 									//$(captureTarget).data('oldval',val);
 									$($('textarea:focus')).val(joinThreeStrings($.trim(val.slice(0, sel.start)),transcript,$.trim(val.slice(sel.end))));
 								} else if ($('*[contenteditable=true]:focus').length>0) {
-									//console.log(['cfocus']);
 									function replaceSelectedText(replacementText) {
 										var sel, range;
 										if (window.getSelection) {
@@ -773,7 +711,6 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 					switch (e.error) {
 						case 'network':
 						case 'no-speech':
-						//	stopRecognising();
 							startRecognising();
 							break;
 						case 'not-allowed':
@@ -787,8 +724,6 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				
 				// restart recognition on successful end 
 				speechRecognitionHandler.onend = function(e){
-					//stopRecognising();
-					//console.log('finished recognition');
 					if (recognising) {
 						startRecognising();
 					}
@@ -834,55 +769,3 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 		}
 	};
 }) (jQuery,window,undefined);
-
-
-
-	
-	
-/*
- * // first commands and buttons
-								
-								// CLICK ON SELECTED RECORD
-								// TODO WARNING MULTIPLE SELECTION
-								if ($('.speechify-selected',pluginDOM).length==1 && (transcript=="okay" || transcript=="click")) {
-									//console.log('ok selection',$('.speechify-selected',pluginDOM));
-									$('.speechify-selected',pluginDOM).each(function() {$(this).click()});
-									$('.speechify-selected',pluginDOM).removeClass('speechify-selected');
-								} else {
-									//console.log('not ok selection - continue',options);
-									var executionCompleted=false;
-									// query options.commands
-									//var done=false;
-									// ANY CONFIGURED COMMANDS MATCHING ?
-									if (options.commands) {
-										//console.log(options.commands);
-										$.each(options.commands,function(key,value) {
-										//console.log(key,value);
-											//console.log('try command '+key,value);
-											if ($.trim(transcript).indexOf(key)==0) {
-												//console.log('do command '+key,transcript,$.trim(transcript).split(key));
-												executionCompleted=true;
-												// TODO ?? PARAMETERS
-												value($.trim(transcript).split(key)[1]); 
-											}
-										});
-									}
-									// TRY FOR A MATCH WITH BUTTONS AND LINKS
-									if (!executionCompleted) {									
-										var matches=[];
-										$("a:contains('"+transcript+"')",pluginDOM).each(function() {matches.push(this);});
-										//	input type=button|submit|image value|name
-										$("input[type=submit],input[type=button],input[type=image]",pluginDOM).each(function() { console.log(this); if (this.value.toLowerCase()==transcript.toLowerCase()) matches.push(this);});
-										console.log('MATCHES',matches);
-										if (matches.length>0) {
-											$('.speechify-selected',pluginDOM).each(function() {$(this).removeClass("speechify-selected")});
-											$.each(matches,function() {
-												$(this).addClass("speechify-selected");
-											});
-											executionComplete=true;
-										}
-									}
-									
-								}
-								
- * */
