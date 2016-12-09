@@ -90,16 +90,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			function traverseGrammar(parts,current,word,grammar) {
 				//console.log(['TGR',parts,current,word]);
 				if (word && typeof word == "string" && word.trim().length>0) {
-					// variable ??
-					var variableGrammar='';
-					var start = word.indexOf("{");
-					var end = word.indexOf("}");
-					console.log(['TGRA',word.slice(0,1),start,end]);
-					if (word.slice(0,1)=="$" && start !== -1 && end !== -1 ) {
-						variableGrammar = word.slice(start,end);
-						word = word.slice(0,start);
-					}
-					console.log(['TGR',parts,current,word,variableGrammar]);
+					//console.log(['TGR',parts,current,word]);
 					// add grammar with this word
 					// traverse tree
 					if (current.hasOwnProperty(word)) {
@@ -137,7 +128,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				var word = parts[0];
 				// OPTIONAL GROUPING
 				// is this and option token with no spaces
-				//console.log(['AGR',rule,parts,word]);
+				//console.log(['AGR',rule,parts,word,grammar]);
 				if (word.slice(0,1) == "[" && word.slice(-1) == "]" ) {
 					// split on vertical bar for options
 					wordOptions = word.slice(1,-1).split("|");
@@ -235,11 +226,11 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 					//console.log(["inside str",insideString]);
 					for (  var i = 0; i < insideString.length; i++) {
 						// allow for nested brackets 
-						if (insideString.charAt(i) == "(" || insideString.charAt(i) == "{") {
+						if (insideString.charAt(i) == "(") {
 							depth++;
 							//clog(["depth plus"]);
 							orParts[orPartsIndex] += insideString.charAt(i);
-						} else if (insideString.charAt(i) == ")" || insideString.charAt(i) == "}") {
+						} else if (insideString.charAt(i) == ")") {
 							depth--;
 							//clog(["depth minus"]);
 							orParts[orPartsIndex] += insideString.charAt(i);
@@ -279,10 +270,10 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 					//console.log(["inside str",insideString]);
 					for (  var i = 0; i < word.length; i++) {
 						// allow for nested brackets 
-						if (word.charAt(i) == "(" || word.charAt(i) == "{") {
+						if (word.charAt(i) == "(" ) {
 							depth++;
 							wordOptions[wordOptionsIndex] += word.charAt(i);
-						} else if (word.charAt(i) == ")" || word.charAt(i) == "}") {
+						} else if (word.charAt(i) == ")" ) {
 							depth--;
 							wordOptions[wordOptionsIndex] += word.charAt(i);
 						} else if (depth == 0 && word.charAt(i) == "|") {
@@ -296,15 +287,6 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 					//wordOptions = word.split("|");
 					//console.log(['WO',wordOptions]);
 					for (  i = 0; i < wordOptions.length; i++) {
-						// extract variable grammar
-						var start = wordOptions[i].indexOf("{");
-						var end =wordOptions[i].indexOf("}");
-						var variableGrammar=null;
-						if (wordOptions[i].slice(0,1) == "$" && start !=-1 && end !=-1) {
-							variableGrammar = wordOptions[i].slice(start+1,end);
-							wordOptions[i]= wordOptions[i].slice(0,start);
-						}
-						//console.log(['eek',wordOptions[i],variableGrammar]);
 						// extra head to tree iteration with this wordOption
 						var current2 = current;
 						current2 = traverseGrammar(parts,current2,wordOptions[i],grammar);
@@ -312,14 +294,6 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 							addGrammarRecursive( parts.slice(1).join(" "),grammar,current2);
 						}
 					}
-					
-					//console.log(['AGR',rule,current]);
-					// process this token
-					//current = traverseGrammar(parts,current,word,grammar);
-					//console.log(['AGR2',current]);
-					//if (parts.length>1) {
-					//	addGrammarRecursive(parts.slice(1).join(" "),grammar,current);
-					//}
 				}
 				
 			}
@@ -329,6 +303,41 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			 * into the variable activeGrammars
 			 ******************/
 			function addGrammars(grammars,activeGrammars)  {
+				// first extract all variable grammars
+				$.each(grammars,function(grammarKey,grammar) {
+				//console.log(['Pgrammar',grammar]);
+					$.each(grammar.texts,function(ruleKey,rule) {
+						//console.log(['Pgrammar R',ruleKey,rule]);
+						var found= true;
+						var breakOut = 0;
+						while (found && breakOut < 200) {
+							breakOut++;
+							var varStart = rule.indexOf("$");
+							var ruleStart = rule.indexOf("{");
+							var ruleEnd = rule.indexOf("}");
+							var cleanedRule = rule.slice(0,ruleStart) + rule.slice(ruleEnd + 1);
+							var varName = rule.slice(varStart,ruleStart);
+							var varRule = rule.slice(ruleStart + 1, ruleEnd );
+							//console.log(['GVa',varStart,ruleStart,ruleEnd,cleanedRule,varName,varRule]);
+							found = false;
+							if (varName.length > 1 && varRule.length > 0) {
+								// update the rule
+								grammars[grammarKey].texts[ruleKey] = cleanedRule;
+								// save the grammar
+								variableGrammars[varName]={};
+								var grammar = new SpeechifyGrammar(rule,function() {console.log(['variable grammar ',varName,varRule]); });
+								addGrammarRecursive(varRule,grammar,variableGrammars[varName]);
+							} else {
+								found = false;
+							}
+						}
+						//if () throw new SpeechifyGrammarException('balh');
+					});
+				});
+				//console.log(['variable grammar',variableGrammars]);
+
+				
+				// now map grammars into a tree
 				$.each(grammars,function(grammarKey,grammar) {
 				//console.log(['grammar',grammar]);
 					$.each(grammar.texts,function(ruleKey,rule) {
@@ -338,6 +347,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 						addGrammarRecursive(rule,grammar,activeGrammars);
 					});
 				});
+				
 				//console.log(['active grammar',activeGrammars]);
 			} 
 
@@ -350,7 +360,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				if (activeGrammars != null && transcript && transcript.length > 0)  {
 					console.log(['REALLY searchForGrammar']);
 					
-					var parts = transcript.split(" ");
+					var parts = transcript.trim().split(" ");
 					var current = activeGrammars;
 					var done = false;
 					var word = parts[0];
@@ -359,7 +369,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 						// first recurse (deepest first)
 						searchForGrammar(parts.slice(1).join(" "),activeGrammars[word],variables,partialMatchCallback,successCallback);
 						// no match deeper in the tree then check if there is a match here
-						console.log(['ISGRAMMAR',isGrammarNode(activeGrammars[word]),word,activeGrammars,parts]);
+						//console.log(['ISGRAMMAR',isGrammarNode(activeGrammars[word]),word,activeGrammars,parts]);
 						if (isGrammarNode(activeGrammars[word]) && parts.length < 2) {
 							successCallback(activeGrammars[word]['::GRAMMAR::'],variables);
 						}
@@ -368,22 +378,47 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 					// otherwise are there any variables to try at this branch in the tree
 					if (hasVariable(current)) {
 						var currentVariables = getVariables(current);
-						console.log(['HAS VARIABLES ',currentVariables]);
+						//console.log(['HAS VARIABLES ',currentVariables]);
 						// iterate variables
 						for (var theVar in currentVariables) {
 							var currentVar=currentVariables[theVar];
 							// iterate end slice of the transcript
 							var theRest = parts.slice(1);
-							console.log(['PROCESS VARIABLE PARTS',parts]);
+							//console.log(['PROCESS VARIABLE PARTS',parts]);
 							//
-							console.log(['PROCESS VARIABLE',variables[currentVar],currentVar,theRest,variables]);
+							console.log(['PROCESS VARIABLE',currentVar,variableGrammars[currentVar],variables[currentVar],theRest,variables]);
 							
-							// if variable has subgrammar and match 
-								// success
-							
-							
+							// if variable has subgrammar 
+							// assume the transcript is a reasonable length, split transcript by space and iterate sub head arrays
+							// where success, call remaining transcript with remaining grammar in this scope
+							if (variableGrammars.hasOwnProperty(currentVar)) {
+								console.log(['have var grammar']);
+								var breakout = false;
+								for (var i =0; i<= theRest.length && !breakout; i++) {
+									var transcriptSlice = word + " " + theRest.slice(0,(theRest.length - i )).join(" ").trim();
+									console.log(['try slice ',transcriptSlice,variableGrammars[currentVar]]);
+									searchForGrammar(transcriptSlice,variableGrammars[currentVar],variables,partialMatchCallback,
+										// success,found match on variable grammar with slice
+										function (grammar,variables) { 
+											console.log(['var grammar success',grammar,variables]);
+											// save variable
+											variables[currentVar] = transcriptSlice; 
+											// try for match on remainder of transcript 
+											var remainder = theRest.slice(theRest.length - i).join(" ");
+											searchForGrammar(remainder,current[currentVar],variables,partialMatchCallback,
+												function (grammar,variables) { 
+													console.log(['full success',grammar,variables]);
+													variables[currentVar] = parts.slice(0,1).join(" "); 
+													successCallback(grammar,variables); 
+												} 
+											);
+										} 
+									);
+								}
+							// simple variable, capture text of a success match for variable
+							} else {
 								searchForGrammar(theRest.join(" "),current[currentVar],variables,partialMatchCallback,function (grammar,variables) { variables[currentVar] = parts.slice(0,1).join(" "); successCallback(grammar,variables); } );
-									
+							}	
 								/*while (theRest.length>0) {
 									console.log(['TRY TRANSCRIPT SLICE',theRest.join(" "),currentVar,current[currentVar]])
 									// recursively searching for grammars
@@ -395,7 +430,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 								console.log(['no kids found for',currentVar]);
 								// if  nothing more specific found, is the variable a grammar node ?
 								if (isGrammarNode(current[currentVar])) {
-									console.log(['FIN: variable last']);
+								//	console.log(['FIN: variable last']);
 									variables[currentVar]=parts.join(' ');
 									successCallback(current[currentVar]['::GRAMMAR::'],variables);
 								}
@@ -422,7 +457,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				//console.log(['AG',activeGrammars]);
 				if (transcript && typeof activeGrammars == "object"  && Object.keys(activeGrammars).length > 0) {
 					transcript = transcript.trim();
-					console.log(['START PROCESS TRANSCRIPT -'+transcript]);
+					//console.log(['START PROCESS TRANSCRIPT -'+transcript]);
 					var variables = {};
 					// start recursive seek grammar
 					try {
@@ -431,7 +466,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 							activeGrammars,
 							variables,
 							function(a,b) {
-								console.log(['PARTIAL',a,b]);
+							//	console.log(['PARTIAL',a,b]);
 							},
 							function (grammar,variables) {
 								console.log(['SUCCESS pre',grammar,variables]);
@@ -443,7 +478,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 						console.log(['FAIL']);
 					} catch (e) {
 						if (e instanceof SpeechifySuccessException) {
-							//console.log(['SUCCESS',e.grammar,e.variables]);
+							console.log(['SUCCESS',e.grammar,e.variables]);
 							e.grammar.callback([e.grammar,e.variables]);
 						} else {
 							console.log(['GENERAL ERROR',e]);
@@ -608,6 +643,8 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 	// END PRIVATE METHODS
 	
 	// PUBLIC METHODS
+
+	var variableGrammars = {};
 	var activeGrammars = {};
 	var methods={
 		runTests : function(grammarStrings,testSuite) {
@@ -654,7 +691,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			var grammars=$.extend({},options.grammars);
 			addGrammars(grammars,activeGrammars);
 			//console.log(['GRAMMARS',grammars]);
-			console.log(['COLLATED',activeGrammars]);
+			//console.log(['COLLATED',activeGrammars]);
 			
 			
 			
@@ -675,7 +712,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				
 				
 				speechRecognitionHandler.onresult = function(event){
-					console.log(['RESULT',event.results,event]);
+				//	console.log(['RESULT',event.results,event]);
 							
 					for (var i = event.resultIndex; i < event.results.length; ++i) {
 						if (event.results[i].isFinal) {

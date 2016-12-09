@@ -25,35 +25,34 @@ var testGrammarStrings = [
 'delete ( (red|blue) box|green bed)',
 'remove ($size shirt|$color hat)'
 */
-'get $number{one|two|three|four|five|six} ((yellow|[light] red)|(big (blue| green))) $thing'
+'get $number{(one thing|two|three|four|five|six)} ((yellow|[light] red)|(big (blue| green))) $thing'
 ];
 	
 var testSuite = [
-	//{transcript:'create',result:{key: 'c',variables:{"$time":"why","$date":"now",'$d2':'red'}}}, 
-	{transcript:'create',result:{key: 'create [$color] [$thing]',variables:{}}}, 
-	{transcript:'create bed',result:{key: 'create [$color] [$thing]',variables:{'$color':'bed'}}}, 
-	{transcript:'create box',result:{key: 'create box',variables:{}}}, 
-	{transcript:'create red box',result:{key: 'create red box',variables:{}}}, 
-	{transcript:'create green box',result:{key: 'create $color box',variables:{'$color':'green'}}}, 
-	{transcript:'create green bed',result:{key: 'create [$color] [$thing]',variables:{'$thing':'bed','$color':'green'}}}, 
+	{transcript:'get two big blue things',result:'::FAIL::'}, 	//{transcript:'create',result:{key: 'c',variables:{"$time":"why","$date":"now",'$d2':'red'}}}, 
+	//{transcript:'create',result:{key: 'create [$color] [$thing]',variables:{}}}, 
+	//{transcript:'create bed',result:{key: 'create [$color] [$thing]',variables:{'$color':'bed'}}}, 
+	//{transcript:'create box',result:{key: 'create box',variables:{}}}, 
+	//{transcript:'create red box',result:{key: 'create red box',variables:{}}}, 
+	//{transcript:'create green box',result:{key: 'create $color box',variables:{'$color':'green'}}}, 
+	//{transcript:'create green bed',result:{key: 'create [$color] [$thing]',variables:{'$thing':'bed','$color':'green'}}}, 
 	
-	{transcript:'make box',result:{key: 'make $color [$thing]',variables:{'$color':'box'}}},  //!!  wrong - put optional first as per 'remake box'
-	{transcript:'make red box',result:{key: 'make $color [$thing]',variables:{'$thing':'box','$color':'red'}}}, 
-	{transcript:'make green box',result:{key: 'make $color [$thing]',variables:{'$thing':'box','$color':'green'}}}, 
+	//{transcript:'make box',result:{key: 'make $color [$thing]',variables:{'$color':'box'}}},  //!!  wrong - put optional first as per 'remake box'
+	//{transcript:'make red box',result:{key: 'make $color [$thing]',variables:{'$thing':'box','$color':'red'}}}, 
+	//{transcript:'make green box',result:{key: 'make $color [$thing]',variables:{'$thing':'box','$color':'green'}}}, 
 	
-	{transcript:'remake box',result:{key: 'remake [$color] $thing',variables:{'$thing':'box'}}}, 
-	{transcript:'remake red box',result:{key: 'remake [$color] $thing',variables:{'$thing':'box','$color':'red'}}}, 
-	{transcript:'remake green box',result:{key: 'remake [$color] $thing',variables:{'$thing':'box','$color':'green'}}}, 
+	//{transcript:'remake box',result:{key: 'remake [$color] $thing',variables:{'$thing':'box'}}}, 
+	//{transcript:'remake red box',result:{key: 'remake [$color] $thing',variables:{'$thing':'box','$color':'red'}}}, 
+	//{transcript:'remake green box',result:{key: 'remake [$color] $thing',variables:{'$thing':'box','$color':'green'}}}, 
 	
-	{transcript:'delete green bed',result:{key: 'delete (red box|green bed)',variables:{}}}, 
-	{transcript:'delete red box',result:{key: 'delete (red box|green bed)',variables:{}}}, 
-	{transcript:'delete red bed',result:'::FAIL::'}, 
+	//{transcript:'delete green bed',result:{key: 'delete (red box|green bed)',variables:{}}}, 
+	//{transcript:'delete red box',result:{key: 'delete (red box|green bed)',variables:{}}}, 
+	//{transcript:'delete red bed',result:'::FAIL::'}, 
 	
-	{transcript:'remove small shirt',result:{key: 'remove ($size shirt|$color hat)',variables:{'$size':'small'}}}, 
-	{transcript:'remove red hat',result:{key: 'remove ($size shirt|$color hat)',variables:{'$color':'red'}}}, 
-	{transcript:'remove red hart',result:'::FAIL::'}, 
-	{transcript:'remove hat',result:'::FAIL::'}, 
-
+	//{transcript:'remove small shirt',result:{key: 'remove ($size shirt|$color hat)',variables:{'$size':'small'}}}, 
+	//{transcript:'remove red hat',result:{key: 'remove ($size shirt|$color hat)',variables:{'$color':'red'}}}, 
+	//{transcript:'remove red hart',result:'::FAIL::'}, 
+	//{transcript:'remove hat',result:'::FAIL::'}, 
 ];
 
 $(document).ready(function() {
