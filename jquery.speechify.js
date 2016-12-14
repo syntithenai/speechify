@@ -390,8 +390,14 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 									);
 								}
 							// simple variable, capture text of a success match for variable
+							// try gradually larger slices of the transcript searching for a match
 							} else {
-								searchForGrammar(theRest.join(" "),current[currentVar],variables,partialMatchCallback,function (grammar,variables) { variables[currentVar] = parts.slice(0,1).join(" "); successCallback(grammar,variables); } );
+								console.log(['variable try sub grammars',theRest,currentVar,current[currentVar]]);
+								for (var i = 0; i < theRest.length; i++) {
+									console.log(['variable try sub grammar',i,theRest.slice(0,i).join(" ")]);
+									searchForGrammar(theRest.slice(0,i).join(" "),current[currentVar],variables,partialMatchCallback,function (grammar,variables) { variables[currentVar] = parts.slice(0,i+1).join(" "); successCallback(grammar,variables); } );
+								}
+								
 							}	
 							// if  nothing more specific found, is the variable a grammar node ?
 							if (isGrammarNode(current[currentVar])) {

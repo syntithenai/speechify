@@ -15,14 +15,14 @@ var testGrammarStrings = [
 'create $color box',
 'create [$color] [$thing]',
 //  alternate ordering
-'make $color [$thing]',  
-'remake [$color] $thing', // DO THIS? - OPTIONAL FIRST
+//'make $color [$thing]',  
+//'remake [$color] $thing', // DO THIS? - OPTIONAL FIRST
 // options
-'delete ( (red|blue) box|green bed)',
-'remove ($size shirt|$color hat)',
+//'delete ( (red|blue) box|green bed)',
+//'remove ($size shirt|$color hat)',
 // TODO FIND EDGE CASES for tests
-'get me $number{(one thing|two|three|four|five|six)} ((yellow|[light] red)|(big $scolor{(blue|green)})) $thing',
-'add [note|node] $content [(to $parentNode|as $connection|to $parentNode as $connection]'
+//'get me $number{(one thing|two|three|four|five|six)} ((yellow|[light] red)|(big $scolor{(blue|green)})) $thing',
+//'add [note|node] $content [(to $parentNode|as $connection|to $parentNode as $connection]'
 ];
 	
 
@@ -35,7 +35,7 @@ var testSuite = [
 	{transcript:'create green box',result:{key: 'create $color box',variables:{'$color':'green'}}}, 
 	{transcript:'create green bed',result:{key: 'create [$color] [$thing]',variables:{'$thing':'bed','$color':'green'}}}, 
 	
-	{transcript:'make box',result:{key: 'make $color [$thing]',variables:{'$color':'box'}}},  //!!  wrong - put optional first as per 'remake box'
+/*	{transcript:'make box',result:{key: 'make $color [$thing]',variables:{'$color':'box'}}},  //!!  wrong - put optional first as per 'remake box'
 	{transcript:'make red box',result:{key: 'make $color [$thing]',variables:{'$thing':'box','$color':'red'}}}, 
 	{transcript:'make green box',result:{key: 'make $color [$thing]',variables:{'$thing':'box','$color':'green'}}}, 
 	
@@ -54,6 +54,7 @@ var testSuite = [
 
 	{transcript:'get me one thing big blue things',result:{key:'get me $number ((yellow|[light] red)|(big $scolor)) $thing',variables:{$number:'one thing',$scolor:'blue',$thing:'things'}}}, 	
 	{transcript:'add note six amazing things to fred',result:'::FAIL::'}, 
+*/
 ];
 
 $(document).ready(function() {
