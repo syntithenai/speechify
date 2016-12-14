@@ -25,11 +25,11 @@ var testGrammarStrings = [
 'delete ( (red|blue) box|green bed)',
 'remove ($size shirt|$color hat)'
 */
-'get $number{(one thing|two|three|four|five|six)} ((yellow|[light] red)|(big (blue| green))) $thing'
+'get me $number{(one thing|two|three|four|five|six)} ((yellow|[light] red)|(big $scolor{(blue|green)})) $thing'
 ];
 	
 var testSuite = [
-	{transcript:'get two big blue things',result:'::FAIL::'}, 	//{transcript:'create',result:{key: 'c',variables:{"$time":"why","$date":"now",'$d2':'red'}}}, 
+	{transcript:'get me one thing big blue things',result:'::FAIL::'}, 	//{transcript:'create',result:{key: 'c',variables:{"$time":"why","$date":"now",'$d2':'red'}}}, 
 	//{transcript:'create',result:{key: 'create [$color] [$thing]',variables:{}}}, 
 	//{transcript:'create bed',result:{key: 'create [$color] [$thing]',variables:{'$color':'bed'}}}, 
 	//{transcript:'create box',result:{key: 'create box',variables:{}}}, 

@@ -1,0 +1,67 @@
+hithere
+
+<script src="../lib/jquery.js" type="text/javascript"></script>
+<script src="../jquery.speechify.js" type="text/javascript"></script>
+<script src="../grammars.js" type="text/javascript"></script>
+<link rel="stylesheet" href="../jquery.speechify.css" type="text/css" media="all" />
+
+<script>
+var testGrammarStrings = [
+// grammar ordering (specific first)
+'create',  // never matched because preferred create [$color] [$thing] is longer
+'create box',
+'create red box',
+'create red $thing',
+'create $color box',
+'create [$color] [$thing]',
+//  alternate ordering
+'make $color [$thing]',  
+'remake [$color] $thing', // DO THIS? - OPTIONAL FIRST
+// options
+'delete ( (red|blue) box|green bed)',
+'remove ($size shirt|$color hat)',
+// TODO FIND EDGE CASES for tests
+'get me $number{(one thing|two|three|four|five|six)} ((yellow|[light] red)|(big $scolor{(blue|green)})) $thing',
+'add [note|node] $content [(to $parentNode|as $connection|to $parentNode as $connection]'
+];
+	
+
+
+var testSuite = [
+	{transcript:'create',result:{key: 'create [$color] [$thing]',variables:{}}}, 
+	{transcript:'create bed',result:{key: 'create [$color] [$thing]',variables:{'$color':'bed'}}}, 
+	{transcript:'create box',result:{key: 'create box',variables:{}}}, 
+	{transcript:'create red box',result:{key: 'create red box',variables:{}}}, 
+	{transcript:'create green box',result:{key: 'create $color box',variables:{'$color':'green'}}}, 
+	{transcript:'create green bed',result:{key: 'create [$color] [$thing]',variables:{'$thing':'bed','$color':'green'}}}, 
+	
+	{transcript:'make box',result:{key: 'make $color [$thing]',variables:{'$color':'box'}}},  //!!  wrong - put optional first as per 'remake box'
+	{transcript:'make red box',result:{key: 'make $color [$thing]',variables:{'$thing':'box','$color':'red'}}}, 
+	{transcript:'make green box',result:{key: 'make $color [$thing]',variables:{'$thing':'box','$color':'green'}}}, 
+	
+	{transcript:'remake box',result:{key: 'remake [$color] $thing',variables:{'$thing':'box'}}}, 
+	{transcript:'remake red box',result:{key: 'remake [$color] $thing',variables:{'$thing':'box','$color':'red'}}}, 
+	{transcript:'remake green box',result:{key: 'remake [$color] $thing',variables:{'$thing':'box','$color':'green'}}}, 
+	
+	{transcript:'delete green bed',result:{key: 'delete ( (red|blue) box|green bed)',variables:{}}}, 
+	{transcript:'delete red box',result:{key: 'delete ( (red|blue) box|green bed)',variables:{}}}, 
+	{transcript:'delete red bed',result:'::FAIL::'}, 
+	
+	{transcript:'remove small shirt',result:{key: 'remove ($size shirt|$color hat)',variables:{'$size':'small'}}}, 
+	{transcript:'remove red hat',result:{key: 'remove ($size shirt|$color hat)',variables:{'$color':'red'}}}, 
+	{transcript:'remove red hart',result:'::FAIL::'}, 
+	{transcript:'remove hat',result:'::FAIL::'}, 
+
+	{transcript:'get me one thing big blue things',result:{key:'get me $number ((yellow|[light] red)|(big $scolor)) $thing',variables:{$number:'one thing',$scolor:'blue',$thing:'things'}}}, 	
+	{transcript:'add note six amazing things to fred',result:'::FAIL::'}, 
+];
+
+$(document).ready(function() {
+	$("#speechifydemo").speechify({
+//		'grammars' : grammars,
+	}).runTests(testGrammarStrings,testSuite);
+
+});
+
+
+</script>
