@@ -81,69 +81,74 @@ jQuery(function(){
 	});
 	$.fn.speechify.relPath='../';
 
+	var multiContent='{$c1 [$c2]}';
 	<!-- END MINDMAP -->
 	var grammarTree = [
-	/*	[
-			[
-			'adenoid|adenoids $content',
-			'ad|add|insert|create|write [$qty{(a|one|two|to|three|four|five)}] [note|notes|node|nodes] $content [and $content2] [and $content3] [and $content4] [and $content5]'],
-			function(params) {
-				var variables = params[1];
-				var selected = springy.renderer.getSelected();
-					
-				//console.log(['selected',springy.renderer.getSelected()]);
-				// default single
-				if (!variables.hasOwnProperty('$qty') || variables['$qty'].length == 0 || variables['$qty'] == 'a' ) {
-					variables['$qty'] = 'one';
-				}
-				// up to five nodes created
-				if (variables['$qty'] == 'one'  || variables['$qty'] == 'two' || variables['$qty'] == 'to' || variables['$qty'] == 'three' || variables['$qty'] == 'four' || variables['$qty'] == 'five'  ) {
-					graph.addNodes(variables['$content']);
-					if ( selected != null && selected.node != null ) {
-						graph.addEdges([variables['$content'],selected.node.id])
-					}
-				}
-				if ((variables['$qty'] == 'two' || variables['$qty'] == 'to' || variables['$qty'] == 'three' || variables['$qty'] == 'four' || variables['$qty'] == 'five') && variables.hasOwnProperty('$content2') && typeof variables['$content2'] && variables['$content2'].length>0) {
-					graph.addNodes(variables['$content2']);
-					if ( selected != null ) {
-						graph.addEdges([variables['$content2'],selected.node.id])
-					}
-				}
-				if (( variables['$qty'] == 'three' || variables['$qty'] == 'four' || variables['$qty'] == 'five') && variables.hasOwnProperty('$content3') && typeof variables['$content3'] && variables['$content3'].length>0) {
-					graph.addNodes(variables['$content3']);
-					if ( selected != null ) {
-						graph.addEdges([variables['$content3'],selected.node.id])
-					}
-				}
-				if (( variables['$qty'] == 'four' || variables['$qty'] == 'five') && variables.hasOwnProperty('$content4') && typeof variables['$content4'] && variables['$content4'].length>0) {
-					graph.addNodes(variables['$content4']);
-					if ( selected != null ) {
-						graph.addEdges([variables['$content4'],selected.node.id])
-					}
-				}
-				saveMap();
-				springy.renderer.graphChanged();
-				jQuery.fn.speechify.notify('Created ' + variables['$qty'] + ' nodes.');
-			}
-		],*/
 		[
-			['add [note|node] $content [(to $parentNode|as $connection|to $parentNode as $connection]'],
+			['add [note|node] $content' + multiContent], //,' [(to $parentNode|as $connection|to $parentNode as $connection]'],
 			function(params) {
 				var variables = params[1];
-				//var b = springy.graph.findNode(variables['$content']);
-				//if (b !=null) {
-					//console.log(['select',b]);
-					//springy.renderer.setSelected(b);
-					//springy.renderer.graphChanged();
-				//} else {
-					//jQuery.fn.speechify.notify('Couldnt find ' + variables['$content'] + ' to select.');
-				//}
-				console.log(['add node',variables]);
-				jQuery.fn.speechify.notify('jo');
+				var connection = '';
+				if (variables.hasOwnProperty('$connection')) {
+					connection = variables['$connection'];
+				}
+				if (variables.hasOwnProperty('$parentNode')) {
+					// explictly create node under selected
+					if (variables['$parentNode'] == "selected") {
+						var s = springy.renderer.getSelected();
+						if (s != null) {
+							graph.addNodes(variables['$content']);
+							var b = springy.graph.findNode(variables['$content']);
+							graph.addEdges([b.id,s.node.id])
+							jQuery.fn.speechify.notify('Added node <b>' + variables['$content'] + '</b> to <b>' + s.node.data.label + '</b>.' );
+							saveMap();
+							springy.renderer.graphChanged();
+						// failed to connect to explicit selected
+						} else {
+							jQuery.fn.speechify.notify('Nothing selected to connect with.');
+						}
+					} else {
+						var b = springy.graph.findNode(variables['$content']);
+						// create node under named parent
+						if (b !=null) {
+							graph.addNodes(variables['$content']);
+							var c = springy.graph.findNode(variables['$content']);
+							graph.addEdges([c.id,b.id])
+							jQuery.fn.speechify.notify('Added node <b>' + variables['$content'] + '</b> to <b>' + b.data.label + '</b>.' );
+							springy.renderer.setSelected(b);
+							saveMap();
+							springy.renderer.graphChanged();
+						// fail to find named parent
+						} else {
+							jQuery.fn.speechify.notify('Could not find <b>' + variables['$parentNode'] + '</b> to connect with.' );
+						}
+					}
+				} else {
+					var s = springy.renderer.getSelected();
+						// create node under selected
+						if (s != null) {
+							graph.addNodes(variables['$content']);
+							var c = springy.graph.findNode(variables['$content']);
+							graph.addEdges([c.id,s.node.id])
+							jQuery.fn.speechify.notify('Added node <b>' + variables['$content'] + '</b> to <b>' + s.node.data.label + '</b>.' );
+							saveMap();
+							springy.renderer.graphChanged();
+						// create disconnected node
+						} else {
+							graph.addNodes(variables['$content']);
+							jQuery.fn.speechify.notify('Added node <b>' + variables['$content'] + '</b>.' );
+							// select new node
+							var b = springy.graph.findNode(variables['$content']);
+							springy.renderer.setSelected(b);
+							saveMap();
+							springy.renderer.graphChanged();
+						}
+				}
+				console.log(['added node',variables]);
 			}
 		],
 		[
-			['select|choose|shoes|cheers|pick|pic [a|the] [note|node] $content'],
+			['select|choose|shoes|cheers|pick|pic [a|the] [note|node] $content'+ multiContent],
 			function(params) {
 				var variables = params[1];
 				var b = springy.graph.findNode(variables['$content']);
@@ -166,7 +171,7 @@ jQuery(function(){
 		],
 		// START
 		[
-			['rename $node to $newName'],
+			['rename $node'+ multiContent+' to $newName' +multiContent],
 			function(params) {
 				console.log(['rename node']);
 				var variables = params[1];
@@ -182,7 +187,7 @@ jQuery(function(){
 			}
 		],
 		[
-			['prepend $text (to|too|two) (node|note) $node'],
+			['prepend $text'+ multiContent+' (to|too|two) (node|note) $node'+multiContent],
 			function(params) {
 				console.log(['append text']);
 				var variables = params[1];
@@ -198,7 +203,7 @@ jQuery(function(){
 			}
 		],
 		[
-			['append $text (to|too|two) (node|note) $node'],
+			['append $text'+ multiContent+' (to|too|two) (node|note) $node'+ multiContent],
 			function(params) {
 				console.log(['append text']);
 				var variables = params[1];
@@ -214,7 +219,7 @@ jQuery(function(){
 			}
 		],
 		[
-			['move [note|node] $node from $src to $target'],
+			['move [note|node] $node'+ multiContent+' from $src'+ multiContent+' to $target'+ multiContent],
 			function(params) {
 				console.log(['move']);
 				saveMap();
@@ -223,7 +228,7 @@ jQuery(function(){
 		],
 		// END
 		[
-			['delete [a] [note|node] $content'],
+			['delete [a] [note|node] $content'+ multiContent],
 			function(params) {
 				var variables = params[1];
 				if (variables['$content'] == 'selected node') {
@@ -263,7 +268,7 @@ jQuery(function(){
 			}
 		],
 		[
-			['join|connect $from to|and $to [as $connection]'],
+			['join|connect $from'+ multiContent+' to|and $to'+ multiContent+' [as $connection'+ multiContent+']'],
 			function(params) {
 				var variables = params[1];
 				var from = springy.graph.findNode(variables['$from']);
@@ -285,7 +290,7 @@ jQuery(function(){
 			}
 		],
 		[
-			['(disconnect|break|brake|remove connection) $from to $to [as $connection]'],
+			['(disconnect|break|brake|remove connection) $from'+ multiContent+' to $to'+ multiContent+' [as $connection'+ multiContent+']'],
 			function(params) {
 				
 				var variables = params[1];
@@ -334,6 +339,7 @@ jQuery(function(){
 				console.log('reset demo data');
 				//graph = new Springy.Graph();
 				addSampleDataToGraph(graph);
+				springy.renderer.setSelected(null);
 				saveMap();
 				springy.renderer.graphChanged();
 				jQuery.fn.speechify.notify('Map data reset to sample data');
@@ -343,17 +349,46 @@ jQuery(function(){
 			['what can i say'],
 			function(params) {
 				console.log(['what can I say']);
-				jQuery.fn.speechify.notify("create $thing<br/> select $thing <br/>delete $thing");
+				var commands ="";
+				commands +="[] - indicates optional <br/>";
+				commands +="| - OR options<br/>";
+				
+				commands +="<h3>Notes</h3>";
+				commands +="<b>new</b> $thing [to $parent|selected] [as $connection]<br/>";
+				commands +="<b>select</b> $thing<br/>";
+				commands +="<b>rename</b> [$thing|selected] to $newName<br/>";
+				commands +="<b>prepend</b> $thing to $parent|selected<br/>";
+				commands +="<b>append</b> $thing to $parent|selected<br/>";
+				commands +="<h3>Connections</h3>";
+				commands +="<b>connect</b> $thing to $parent<br/>";
+				commands +="<b>disconnect</b> $thing from $parent<br/>";
+				commands +="<b>move</b> $thing from $oldParent to $newParent<br/>";
+				commands +="<h3>Maps</h3>";
+				commands +="<b>new map</b> $name<br/>";
+				commands +="<b>list maps</b><br/>";
+				commands +="<b>what map am i using</b><br/> ";
+				commands +="<b>open map</b> $name<br/>";
+				commands +="<b>delete map</b> $name <b>now please</b><br/> ";
+				commands +="<b>clear map</b> $name <b>now please</b><br/> ";
+				commands +="<b>reset map to sample data</b><br/> ";
+				commands +="<h3>Misc</h3>";
+				commands +="<b>what can i say</b><br/> ";
+				commands +="<b>go to sleep|pause listening</b><br/> ";
+				commands +="<b>wake up|start listening</b><br/> ";
+				commands +="<b>stop listening</b><br/> ";
+				
+				jQuery.fn.speechify.notify(commands);
 			}
 		],
 		[
-			['open|load|road map|mac $mapName'],
+			['open|load|road map|mac $mapName'+ multiContent],
 			function(params) {
 				console.log(['loadMap',params]);
 				var variables = params[1];
 				if (variables.hasOwnProperty('$mapName')) {
 					if (loadMap(variables['$mapName']) != null) {
 						jQuery.fn.speechify.notify("Loaded map " +variables['$mapName']);
+						springy.renderer.setSelected(null);
 						springy.renderer.graphChanged();
 					} else {
 						jQuery.fn.speechify.notify("Couldn't load map " +variables['$mapName']);
@@ -362,7 +397,7 @@ jQuery(function(){
 			}
 		],
 		[
-			['save map as $mapName'],
+			['save map as $mapName'+ multiContent],
 			function(params) {
 				console.log(['saveMap',params]);
 				var variables = params[1];
@@ -376,7 +411,7 @@ jQuery(function(){
 			}
 		],
 		[
-			['new map [as] $mapName'],
+			['new map [as] $mapName'+ multiContent],
 			function(params) {
 				console.log(['newMap',params]);
 				var variables = params[1];
@@ -385,6 +420,7 @@ jQuery(function(){
 					graph.nodes = [];
 					graph.nodeSet = {};
 					saveMap(variables['$mapName'])
+					springy.renderer.setSelected(null);
 					jQuery.fn.speechify.notify("Saved new map as " + variables['$mapName']);
 					springy.renderer.graphChanged();
 				} else {
@@ -393,7 +429,7 @@ jQuery(function(){
 			}
 		],
 		[
-			['list|show [$trash] maps'],
+			['list|show [$trash'+ multiContent+'] maps'],
 			function(params) {
 				console.log(['list Maps',params]);
 				// TODO CONFIRMATION
@@ -408,7 +444,7 @@ jQuery(function(){
 			}
 		],
 		[
-			['delete map $mapName now please'],
+			['delete map $mapName'+ multiContent+' now please'],
 			function(params) {
 				console.log(['delete Map',params]);
 				var variables = params[1];
@@ -434,6 +470,8 @@ jQuery(function(){
 				graph.edges = [];
 				graph.nodes = [];
 				graph.nodeSet = {};
+				springy.renderer.setSelected(null);
+				saveMap();
 				springy.renderer.graphChanged();
 			}
 		],

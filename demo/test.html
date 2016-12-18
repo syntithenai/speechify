@@ -8,12 +8,15 @@ hithere
 <script>
 var testGrammarStrings = [
 // grammar ordering (specific first)
-'create',  // never matched because preferred create [$color] [$thing] is longer
-'create box',
-'create red box',
-'create red $thing',
-'create $color box',
-'create [$color] [$thing]',
+//'create',
+//'create box',
+//'create red box',
+//'create red $thing',
+//'create $color box',
+//'create $thing',
+//'create [$color] $thing',
+'imagine $c{$c1 $c2} things',
+'think $d{$d1 [$d2]} things',
 //  alternate ordering
 //'make $color [$thing]',  
 //'remake [$color] $thing', // DO THIS? - OPTIONAL FIRST
@@ -28,12 +31,18 @@ var testGrammarStrings = [
 
 
 var testSuite = [
-	{transcript:'create',result:{key: 'create [$color] [$thing]',variables:{}}}, 
-	{transcript:'create bed',result:{key: 'create [$color] [$thing]',variables:{'$color':'bed'}}}, 
-	{transcript:'create box',result:{key: 'create box',variables:{}}}, 
-	{transcript:'create red box',result:{key: 'create red box',variables:{}}}, 
-	{transcript:'create green box',result:{key: 'create $color box',variables:{'$color':'green'}}}, 
-	{transcript:'create green bed',result:{key: 'create [$color] [$thing]',variables:{'$thing':'bed','$color':'green'}}}, 
+	//{transcript:'create',result:{key: 'create',variables:{}}}, 
+	//{transcript:'create bed',result:{key: 'create [$color] $thing',variables:{'$thing':'bed'}}}, 
+	//{transcript:'create box',result:{key: 'create box',variables:{}}}, 
+	//{transcript:'create red box',result:{key: 'create red box',variables:{}}}, 
+	//{transcript:'create green box',result:{key: 'create $color box',variables:{'$color':'green'}}}, 
+	//{transcript:'create green bed',result:{key: 'create [$color] $thing',variables:{'$thing':'bed','$color':'green'}}}, 
+	//// use sub grammar to create two token variable
+	//{transcript:'imagine red things',result:'::FAIL::'}, 
+	//{transcript:'imagine big red things',result:{key: 'imagine $c things',variables:{'$c2':'red','$c1':'big','$c':'big red'}}}, 
+	// or one or two token variable
+	{transcript:'think big red things',result:{key: 'think $d things',variables:{'$d2':'red','$d1':'big','$d':'big red'}}}, 
+	{transcript:'think big things',result:{key: 'think $d things',variables:{'$d1':'big','$d':'big'}}}, 
 	
 /*	{transcript:'make box',result:{key: 'make $color [$thing]',variables:{'$color':'box'}}},  //!!  wrong - put optional first as per 'remake box'
 	{transcript:'make red box',result:{key: 'make $color [$thing]',variables:{'$thing':'box','$color':'red'}}}, 

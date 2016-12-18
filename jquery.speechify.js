@@ -360,6 +360,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 					
 					// otherwise are there any variables to try at this branch in the tree
 					if (hasVariable(current)) {
+						console.log(['possible variable match',parts.join(" "),activeGrammars]);
 						var currentVariables = getVariables(current);
 						// iterate variables
 						for (var theVar in currentVariables) {
@@ -370,6 +371,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 							// assume the transcript is a reasonable length, split transcript by space and iterate sub head arrays
 							// where success, call remaining transcript with remaining grammar in this scope
 							if (variableGrammars.hasOwnProperty(currentVar)) {
+								console.log(['complex variable match']);
 								var breakout = false;
 								for (var i =0; i<= theRest.length && !breakout; i++) {
 									var transcriptSlice = word + " " + theRest.slice(0,(theRest.length - i )).join(" ").trim();
@@ -377,12 +379,16 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 										// success,found match on variable grammar with slice
 										function (grammar,variables) { 
 											// save variable
-											variables[currentVar] = transcriptSlice; 
+											//variables[currentVar] = transcriptSlice; 
 											// try for match on remainder of transcript 
-											var remainder = theRest.slice(theRest.length - i).join(" ");
+											var remainder = theRest.slice(theRest.length - i ).join(" ");
+											console.log(['variable match ',currentVar,transcriptSlice,'REM',remainder]);
+											
 											searchForGrammar(remainder,current[currentVar],variables,partialMatchCallback,
 												function (grammar,variables) { 
 													variables[currentVar] = transcriptSlice.trim(); // parts.slice(0,1).join(" "); 
+													console.log(['SETVAR VAR',currentVar,transcriptSlice.trim()]);
+													console.log(['grammar match ',currentVar,transcriptSlice,'REM',remainder]);
 													successCallback(grammar,variables); 
 												} 
 											);
@@ -392,16 +398,17 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 							// simple variable, capture text of a success match for variable
 							// try gradually larger slices of the transcript searching for a match
 							} else {
-								console.log(['variable try sub grammars',theRest,currentVar,current[currentVar]]);
-								for (var i = 0; i < theRest.length; i++) {
-									console.log(['variable try sub grammar',i,theRest.slice(0,i).join(" ")]);
-									searchForGrammar(theRest.slice(0,i).join(" "),current[currentVar],variables,partialMatchCallback,function (grammar,variables) { variables[currentVar] = parts.slice(0,i+1).join(" "); successCallback(grammar,variables); } );
-								}
+								console.log(['simple variable match',parts.join(" "),activeGrammars]);
+								//for (var i = 0; i < theRest.length; i++) {
+									//console.log(['variable try sub grammar',i,theRest.slice(0,i).join(" ")]);
+									searchForGrammar(theRest.join(" "),current[currentVar],variables,partialMatchCallback,function (grammar,variables) { variables[currentVar] = word; console.log(['SETVAR PLAIN',currentVar,word]); successCallback(grammar,variables); } );
+								//}
 								
 							}	
 							// if  nothing more specific found, is the variable a grammar node ?
 							if (isGrammarNode(current[currentVar])) {
 								variables[currentVar]=parts.join(' ');
+								console.log(['SETVAR GRAMMAR',currentVar,word]);
 								successCallback(current[currentVar]['::GRAMMAR::'],variables);
 							}
 							// end if
@@ -449,7 +456,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 								console.log(['PARTIAL',a,b]);
 							},
 							function (grammar,variables) {
-								//console.log(['SUCCESS pre',grammar,variables]);
+								console.log(['SUCCESS pre',grammar,variables]);
 								// abuse exceptions as break out from any recursive depth
 								throw new SpeechifySuccessException(grammar,variables);
 							}
@@ -467,7 +474,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 						jQuery.fn.speechify.notify(notifyMessage);
 					} catch (e) {
 						if (e instanceof SpeechifySuccessException) {
-							//console.log(['SUCCESS',e.grammar,e.variables]);
+							console.log(['SUCCESS',e.grammar,e.variables]);
 							e.grammar.callback([e.grammar,e.variables]);
 						} else {
 							console.log(['GENERAL ERROR',e]);
