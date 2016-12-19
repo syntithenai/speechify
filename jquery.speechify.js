@@ -292,6 +292,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			 ******************/
 			function addGrammars(grammars,activeGrammars)  {
 				// first extract all variable grammars
+				console.log(['ADD GRAMMARS',grammars,activeGrammars]);
 				$.each(grammars,function(grammarKey,grammar) {
 					$.each(grammar.texts,function(ruleKey,rule) {
 						var found= true;
@@ -313,7 +314,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 								grammars[grammarKey].texts[ruleKey] = cleanedRule;
 								// save the grammar
 								variableGrammars[varName]={};
-								var grammar = new SpeechifyGrammar(rule,function() {console.log(['variable grammar ',varName,varRule]); });
+								var grammar = new SpeechifyGrammar(rule,function() {});  // empty callback to pass through variable  //console.log(['variable grammar ',varName,varRule]); 
 								addGrammarRecursive(varRule,grammar,variableGrammars[varName]);
 							} else {
 								found = false;
@@ -340,9 +341,9 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			 * Allow for variables and optional tokens
 			 */
 			function searchForGrammar(transcript,activeGrammars,variables,partialMatchCallback,successCallback) {
-				console.log(['searchForGrammar',transcript,activeGrammars]);
+				//console.log(['searchForGrammar',transcript,activeGrammars]);
 				if (activeGrammars != null && transcript && transcript.length > 0)  {
-					console.log(['REALLY searchForGrammar']);
+					//console.log(['REALLY searchForGrammar']);
 					
 					var parts = transcript.trim().split(" ");
 					var current = activeGrammars;
@@ -360,7 +361,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 					
 					// otherwise are there any variables to try at this branch in the tree
 					if (hasVariable(current)) {
-						console.log(['possible variable match',parts.join(" "),activeGrammars]);
+						//console.log(['possible variable match',parts.join(" "),activeGrammars]);
 						var currentVariables = getVariables(current);
 						// iterate variables
 						for (var theVar in currentVariables) {
@@ -371,7 +372,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 							// assume the transcript is a reasonable length, split transcript by space and iterate sub head arrays
 							// where success, call remaining transcript with remaining grammar in this scope
 							if (variableGrammars.hasOwnProperty(currentVar)) {
-								console.log(['complex variable match']);
+								//console.log(['complex variable match']);
 								var breakout = false;
 								for (var i =0; i<= theRest.length && !breakout; i++) {
 									var transcriptSlice = word + " " + theRest.slice(0,(theRest.length - i )).join(" ").trim();
@@ -382,13 +383,12 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 											//variables[currentVar] = transcriptSlice; 
 											// try for match on remainder of transcript 
 											var remainder = theRest.slice(theRest.length - i ).join(" ");
-											console.log(['variable match ',currentVar,transcriptSlice,'REM',remainder]);
-											
+											//console.log(['variable match ',currentVar,transcriptSlice,'REM',remainder]);
 											searchForGrammar(remainder,current[currentVar],variables,partialMatchCallback,
 												function (grammar,variables) { 
 													variables[currentVar] = transcriptSlice.trim(); // parts.slice(0,1).join(" "); 
-													console.log(['SETVAR VAR',currentVar,transcriptSlice.trim()]);
-													console.log(['grammar match ',currentVar,transcriptSlice,'REM',remainder]);
+													//console.log(['SETVAR VAR',currentVar,transcriptSlice.trim()]);
+													//console.log(['grammar match ',currentVar,transcriptSlice,'REM',remainder]);
 													successCallback(grammar,variables); 
 												} 
 											);
@@ -398,7 +398,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 							// simple variable, capture text of a success match for variable
 							// try gradually larger slices of the transcript searching for a match
 							} else {
-								console.log(['simple variable match',parts.join(" "),activeGrammars]);
+								//console.log(['simple variable match',parts.join(" "),activeGrammars]);
 								//for (var i = 0; i < theRest.length; i++) {
 									//console.log(['variable try sub grammar',i,theRest.slice(0,i).join(" ")]);
 									searchForGrammar(theRest.join(" "),current[currentVar],variables,partialMatchCallback,function (grammar,variables) { variables[currentVar] = word; console.log(['SETVAR PLAIN',currentVar,word]); successCallback(grammar,variables); } );
@@ -408,7 +408,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 							// if  nothing more specific found, is the variable a grammar node ?
 							if (isGrammarNode(current[currentVar])) {
 								variables[currentVar]=parts.join(' ');
-								console.log(['SETVAR GRAMMAR',currentVar,word]);
+								//console.log(['SETVAR GRAMMAR',currentVar,word]);
 								successCallback(current[currentVar]['::GRAMMAR::'],variables);
 							}
 							// end if
@@ -456,7 +456,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 								console.log(['PARTIAL',a,b]);
 							},
 							function (grammar,variables) {
-								console.log(['SUCCESS pre',grammar,variables]);
+								//console.log(['SUCCESS pre',grammar,variables]);
 								// abuse exceptions as break out from any recursive depth
 								throw new SpeechifySuccessException(grammar,variables);
 							}
@@ -476,11 +476,13 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 						if (e instanceof SpeechifySuccessException) {
 							console.log(['SUCCESS',e.grammar,e.variables]);
 							e.grammar.callback([e.grammar,e.variables]);
+							return true;
 						} else {
 							console.log(['GENERAL ERROR',e]);
 						}
 					}
 				}
+				return false;
 			}
 
 			
@@ -524,9 +526,9 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 					$(pluginDOM).append('<div id="speechify-status" ></div>');
 					$('#speechify-status').attr('style','position: fixed; top: 20px; right: 20px;');
 				}	
-				$('#speechify-status').unbind('click.speechifystart').bind('click.speechifystart',function() {stopRecognising();});
 				$('#speechify-status').html('<span class="microphone microphone-on"><img alt="on" src="'+$.fn.speechify.relPath+'images/microphone.png" ><span class="speechifymessages" ><div class="message" >Start/Stop/Pause Listening or click the microphone.</div><div class="message" >Try <b>what can I say</b></div></span></span>').show();
 				$('#speechify-status .microphone img').css('border','2px solid red');
+				$('#speechify-status').unbind('click.speechifystart').bind('click.speechifystart',function() {stopRecognising();});
 				// bind voice editing for text entries
 				bindTextEntries(pluginDOM);
 			}
@@ -546,7 +548,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 						try {
 							speechRecognitionHandler.start();
 						} catch (e) {
-							console.log(e);
+							//console.log(e);
 						}	
 					}
 				}
@@ -554,7 +556,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 
 			function pauseRecognising() {
 				restartCount = 0;
-				console.log('pause recog');
+				//console.log('pause recog');
 				recognising = false;
 				handlerStarted = true;
 				activateRecognising();
@@ -663,7 +665,30 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 
 	var variableGrammars = {};
 	var activeGrammars = {};
+	var overlayGrammars = {};
+	var override = false;   // should active grammars be considered when there are overlay grammars
+
 	var methods={
+		ask: function(question,grammarTree,o) {
+			// load overlay/override grammar
+			override = o;
+			var grammars=[];
+			for (i in grammarTree) {
+				grammars.push(new SpeechifyGrammar(grammarTree[i][0],grammarTree[i][1]));
+			}
+			console.log('ADD OVERLAY');
+			console.log([grammars,overlayGrammars]);
+			addGrammars(grammars,overlayGrammars);
+			jQuery.fn.speechify.notify(question);
+		},
+		dumpOverlay: function() {
+			console.log(['DUMP OVERLAY',overlayGrammars]);
+		},
+		clearOverlay: function() {
+			console.log('CLEAR OVERLAY');
+			overlayGrammars = {};
+			override = false;
+		},
 		runTests : function(grammarStrings,testSuite) {
 			var logged = '';
 			var clog = function(toLog) {
@@ -715,16 +740,25 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 		init : function(options) {
 			pluginDOM=this;
 			options=$.extend({forceHttps:true,'relPath':''},options);
-			console.log('INIT');
-			console.log(options);
+			//console.log('INIT');
+			//console.log(options);
 			if (options.forceHttps) {
 				//if (window.location.protocol!='https:') window.location='https://'+window.location.hostname+window.location.pathname; 
 			} 
 			
-			var contextGrammars = {}
+			
 			var grammars=$.extend({},options.grammars);
+			// shortcut initialise grammar
+			// append grammarTree array to grammar as SpeechGrammar objects
+			if (options.grammarTree != null) {
+				var grammars=[];
+				for (i in options.grammarTree) {
+					grammars.push(new SpeechifyGrammar(options.grammarTree[i][0],options.grammarTree[i][1]));
+				}
+			}
+			
 			addGrammars(grammars,activeGrammars);
-			console.log(['GRAMMARS',grammars]);
+			//console.log(['GRAMMARS',grammars]);
 			console.log(['COLLATED',activeGrammars]);
 			
 			// PLUGIN INIT STARTS HERE
@@ -733,7 +767,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				speechRecognitionHandler.lang='en-AU';
 				speechRecognitionHandler.continuous = false;
 				speechRecognitionHandler.maxAlternatives = 5;
-				console.log(['init with handler',speechRecognitionHandler]);
+				//console.log(['init with handler',speechRecognitionHandler]);
 				
 				
 				//speechRecognitionHandler.onstart = function() {console.log('onstart');}
@@ -786,18 +820,29 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 									replaceSelectedText(transcript);
 								// START MAIN DECISION MAKING HERE
 								} else {
-									processTranscript(transcript,activeGrammars);
+									// process overlay first
+									if (overlayGrammars!= null) {
+										console.log('PROCESS OVERLAY GRAMMAR');
+										var result = processTranscript(transcript,overlayGrammars);
+										if (!result && !override) {
+											console.log('PROCESS MAIN GRAMMAR AFTER OVERLAY');
+											processTranscript(transcript,activeGrammars);
+										} 
+									} else {
+										console.log('PROCESS MAIN GRAMMAR WITHOUT OVERLAY');
+										processTranscript(transcript,activeGrammars);
+									}
 								}
 								console.log('COMMAND:'+transcript);
 							} else {
-								console.log('IGNORE:'+transcript);
+								console.log('IGNORE while paused:'+transcript);
 							}
 						}
 					}
 				};
 				
 				speechRecognitionHandler.onstart = function(){
-					console.log('start speech recognition');
+					//console.log('start speech recognition');
 				};
 				speechRecognitionHandler.onerror = function(e){
 					switch (e.error) {
@@ -859,4 +904,10 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			},duration);
 		}
 	};
+		// duration 0 for persistent message
+	$.fn.speechify.clearNotify=function() {
+		$("#speechify-status .microphone .speechifymessages").hide();
+		$("#speechify-status .microphone .speechifymessages").html('');
+	};
+
 }) (jQuery,window,undefined);

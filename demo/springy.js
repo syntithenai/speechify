@@ -49,8 +49,8 @@
 		this.edges = [];
 		this.adjacency = {};
 
-		this.nextNodeId = 0;
-		this.nextEdgeId = 0;
+		this.nextNodeId = 1;
+		this.nextEdgeId = 1;
 		this.eventListeners = [];
 	};
 
@@ -159,12 +159,12 @@
 
 	Graph.prototype.findNode = function(title) {
 		for (var i = 0; i < this.nodes.length; i++ ) {
-			console.log(['find',this.nodes[i]]);
 			if (this.nodes[i].data && this.nodes[i].data.label && typeof title == "string" && typeof this.nodes[i].data.label == "string" && this.nodes[i].data.label.toLowerCase().trim() == title.toLowerCase().trim()) {
-				console.log(['MATCH',,this.nodes[i].data.label]);
+				console.log(['FOUND',,title,this.nodes[i].data.label]);
 				return this.nodes[i];
 			}
 		}
+		console.log(['FAILED TO FIND ',title]);
 		return null;
 	}
 	
