@@ -9,7 +9,7 @@ $.fn.speechify.relPath='../';
 <script src="springyui.js"></script>
 
 <div id="springydemospeech" ></div>
-<canvas id="springydemo" width="800" height="600" />
+<canvas id="springydemo" width="800" height="600" ></canvas>
 
 <script>
 	
@@ -69,6 +69,8 @@ var SpringyMap = {
 			var store = {nodes: springy.graph.nodes, edges: springy.graph.edges};
 			localStorage.setItem(storeKey,JSON.stringify(store));
 			localStorage.setItem("springymap_active",storeKey);
+			localStorage.setItem("springymap_"+storeKey+"_nextNodeId",springy.graph.nextNodeId);
+			localStorage.setItem("springymap_"+storeKey+"_nextEdgeId",springy.graph.nextEdgeId);
 		}
 	},
 
@@ -95,6 +97,8 @@ var SpringyMap = {
 				graph.addEdge(new Springy.Edge(storedGraph.edges[i].id,graph.nodeSet[storedGraph.edges[i].source.id],graph.nodeSet[storedGraph.edges[i].target.id],storedGraph.edges[i].data));
 			} 
 			localStorage.setItem("springymap_active",storeKey);
+			springy.graph.nextNodeId = localStorage.getItem("springymap_"+storeKey+"_nextNodeId");
+			springy.graph.nextEdgeId = localStorage.getItem("springymap_"+storeKey+"_nextEdgeId");
 		} else {
 			addSampleDataToGraph(graph);
 		}
@@ -420,7 +424,7 @@ var SpringyMap = {
 		// TODO CONFIRMATION
 		var notifyMessage = 'Available maps include <br/><br/>';
 		for (var key in localStorage){
-			if (key != "springymap_active" && key != "springymap_default") {
+			if (key.startsWith("springymap_")) {
 				notifyMessage += '<b>' + key + '</b><br/>';
 			}
 		}
