@@ -485,7 +485,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				return false;
 			}
 
-			
+
 			function bindTextEntries(pluginDOM) {
 					$('input[type=text],input[type=search]',pluginDOM).on('click.speechifytext',function() {
 					$(this).unbind('blur.speechifytext');
@@ -569,6 +569,8 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			}
 
 			function stopRecognising() {
+				console.log('CO');
+				methods.clearOverlay();
 				if (recognising) {
 					recognising=false;
 					handlerStarted=false;
@@ -681,12 +683,66 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			addGrammars(grammars,overlayGrammars);
 			jQuery.fn.speechify.notify(question);
 		},
+		/* Require the key variable in variables to be non empty 
+		 * or trigger a request for the value with an override vocabulary.
+		*/
+		requireVariable: function (variable,question,variables,successCallback,failCallback) {
+			//console.log(['REQUIRE VAR',variable,question,variables]);
+			if (variables.hasOwnProperty(variable) && variables[variable].length>0) {
+				//console.log(['REQUIRE VAR ALREADY OK']);
+				methods.clearOverlay();
+				successCallback(variables[variable]);
+			} else {
+				//console.log(['REQUIRE VAR ASK']);
+				methods.ask(
+					question,
+					[
+					[['$value'],function(parameters) {
+						var innerVariables=parameters[1];
+						//console.log(['REQUIRE VAR ASK CALLBACK',innerVariables]);
+						if (innerVariables.hasOwnProperty('$value') && innerVariables['$value'].length > 0) {
+							//console.log(['REQUIRE VAR save',innerVariables]);
+							methods.clearOverlay();
+							successCallback(innerVariables['$value']);
+						} else {
+							methods.clearOverlay();
+							failCallback();
+						}
+					}],
+					[['cancel'],function() {
+						methods.clearOverlay();
+						failCallback();
+					}]
+					],
+					true
+				);
+			}
+		},
+		confirm: function (question,successCallback) {
+			methods.ask(
+				question,
+				[[['$yesno{yes|no}'],function(parameters) {
+							var variables = parameters[1];
+							if (variables.hasOwnProperty('$yesno') && variables['$yesno']=="yes") {
+								successCallback();
+								methods.clearOverlay();
+							} else {
+								jQuery.fn.speechify.notify('Cancelled.');
+								methods.clearOverlay();
+							}
+						}
+					]
+				]
+			,true);
+		},
 		dumpOverlay: function() {
 			console.log(['DUMP OVERLAY',overlayGrammars]);
 		},
 		clearOverlay: function() {
 			console.log('CLEAR OVERLAY');
+			delete overlayGrammars;
 			overlayGrammars = {};
+			console.log(overlayGrammars);
 			override = false;
 		},
 		runTests : function(grammarStrings,testSuite) {

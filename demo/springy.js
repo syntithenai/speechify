@@ -168,6 +168,17 @@
 		return null;
 	}
 	
+	Graph.prototype.findNodes = function(title) {
+		var matchingNodes = [];
+		for (var i = 0; i < this.nodes.length; i++ ) {
+			if (this.nodes[i].data && this.nodes[i].data.label && typeof title == "string" && typeof this.nodes[i].data.label == "string" && this.nodes[i].data.label.toLowerCase().trim() == title.toLowerCase().trim()) {
+				console.log(['FOUND',,title,this.nodes[i].data.label]);
+				matchingNodes.push(this.nodes[i]);
+			}
+		}
+		return matchingNodes;
+	}
+	
 	Graph.prototype.findEdges = function(fromLabel,toLabel) {
 		var edges=[];
 		var from = this.findNode(fromLabel);

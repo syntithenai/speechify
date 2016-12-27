@@ -34,7 +34,7 @@ jQuery(function(){
 		[['select|choose|shoes|cheers|pick|pic [a|the] [note|node] [$content]'],SpringyMap.selectNode],
 		[['select|choose|shoes|cheers|pick|pic nothing'],SpringyMap.selectNothing],
 		[['rename [$node'+ multiContent+'] [to $newName]' +multiContent],SpringyMap.renameNode],
-		[['delete [a] [note|node] [$content]'+ multiContent],SpringyMap.deleteNode],
+		[['delete [a] [note|node] [$node]'+ multiContent],SpringyMap.deleteNode],
 		[['join|connect $from'+ multiContent+' to|and $to'+ multiContent+' [as $connection'+ multiContent+']'],SpringyMap.joinNode],
 		[['(disconnect|break|brake|remove connection) $from'+ multiContent+' to $to'+ multiContent+' [as $connection'+ multiContent+']'],SpringyMap.disconnectNode],
 		[['move [note|node] $node'+ multiContent+' from $src'+ multiContent+' to $target'+ multiContent],SpringyMap.moveNode],
@@ -100,59 +100,13 @@ var SpringyMap = {
 			springy.graph.nextNodeId = localStorage.getItem("springymap_"+storeKey+"_nextNodeId");
 			springy.graph.nextEdgeId = localStorage.getItem("springymap_"+storeKey+"_nextEdgeId");
 		} else {
-			addSampleDataToGraph(graph);
+			SpringyMap.addSampleDataToGraph(graph);
 		}
 		return storedGraph;
 	},
-	/* Require the key variable in variables to be non empty 
-	 * or trigger a request for the value with an override vocabulary.
-	*/
-	requireVariable: function(variable,question,variables,successCallback,failCallback) {
-		//console.log(['REQUIRE VAR',variable,question,variables]);
-		if (variables.hasOwnProperty(variable) && variables[variable].length>0) {
-			//console.log(['REQUIRE VAR ALREADY OK']);
-			speechify.clearOverlay();
-			successCallback(variables[variable]);
-		} else {
-			//console.log(['REQUIRE VAR ASK']);
-			speechify.ask(
-				question,
-				[[['$value'],function(parameters) {
-					var innerVariables=parameters[1];
-					//console.log(['REQUIRE VAR ASK CALLBACK',innerVariables]);
-					if (innerVariables.hasOwnProperty('$value') && innerVariables['$value'].length > 0) {
-						//console.log(['REQUIRE VAR save',innerVariables]);
-						speechify.clearOverlay();
-						successCallback(innerVariables['$value']);
-					} else {
-						speechify.clearOverlay();
-						failCallback();
-					}
-				}]],
-				true
-			);
-		}
-	},
-	confirm: function(question,successCallback) {
-		speechify.ask(
-			question,
-			[[['$yesno{yes|no}'],function(parameters) {
-						var variables = parameters[1];
-						if (variables.hasOwnProperty('$yesno') && variables['$yesno']=="yes") {
-							successCallback();
-							speechify.clearOverlay();
-						} else {
-							jQuery.fn.speechify.notify('Cancelled.');
-							speechify.clearOverlay();
-						}
-					}
-				]
-			]
-		,true);
-	},
 	addNode: function(parameters) {
 		var variables = parameters[1];
-		SpringyMap.requireVariable('$content','Describe the note ?',variables, function(value) {
+		speechify.requireVariable('$content','Describe the note ?',variables, function(value) {
 			var s = springy.renderer.getSelected();
 			var b = graph.newNode({label: value});
 			if (s != null && s.node !=null) {
@@ -173,12 +127,28 @@ var SpringyMap = {
 	},
 	selectNode: function(parameters) {
 		var variables = parameters[1];
-		SpringyMap.requireVariable('$content','Which note do you want to select ?',variables, function(value) {
-			var b = springy.graph.findNode(value);
-			if (b != null) {
-				springy.renderer.setSelected(b);
-				springy.renderer.graphChanged();
-				jQuery.fn.speechify.notify('Selected note <b>' + value + '</b>.' );
+		speechify.requireVariable('$content','Which note do you want to select ?',variables, function(value) {
+			var b = springy.graph.findNodes(value);
+			if (b != null && b.length > 0) {
+				console.log(['muti OK']);
+				if (b.length > 1) {
+					console.log(['muti said many ']);
+					speechify.ask('Multiple exist. Say the number',[
+					[['$number'],function(parameters) {
+						//springy.renderer.setSelected(b);
+						//springy.renderer.graphChanged();
+						//jQuery.fn.speechify.notify('Selected note <b>' + value + '</b>.' );
+						console.log(['muti said ',parameters]);
+					}],
+					[['cancel'],function() {
+						console.log(['muti said cancel']);
+					}],
+					]);
+				} else {
+					springy.renderer.setSelected(b);
+					springy.renderer.graphChanged();
+					jQuery.fn.speechify.notify('Selected note <b>' + value + '</b>.' );
+				}
 			} else {
 				jQuery.fn.speechify.notify('Selection failed. Cannot find note <b>' + value + '</b>.' );
 			}
@@ -197,7 +167,7 @@ var SpringyMap = {
 	renameNode: function(params) {
 		//console.log(['rename node']);
 		var variables = params[1];
-		SpringyMap.requireVariable('$node','Which note do you want to rename ?',variables, 
+		speechify.requireVariable('$node','Which note do you want to rename ?',variables, 
 			function(value) {
 				var node = springy.graph.findNode(value);
 				if (value == "selected") {
@@ -208,9 +178,10 @@ var SpringyMap = {
 				if (node == null) {
 					jQuery.fn.speechify.notify("Can't find <b>"+value+"</b> to rename.");
 				} else {
-					SpringyMap.requireVariable('$newName','What do you want to rename the note to ?',variables, 
+					springy.renderer.setSelected(node);
+					speechify.requireVariable('$newName','What do you want to rename the note to ?',variables, 
 						function(value2) {
-							SpringyMap.confirm("Rename <b>"+node.data.label+"</b> to <b>"+value2+"</b>? <b>Yes</b> or <b>No</b>",function() {
+							speechify.confirm("Rename <b>"+node.data.label+"</b> to <b>"+value2+"</b>? <b>Yes</b> or <b>No</b>",function() {
 								console.log(['REALLY RENAME',value,value2,node,variables]);
 								
 								node.data.label = value2;
@@ -237,7 +208,7 @@ var SpringyMap = {
 			var s = springy.renderer.getSelected();
 			//console.log(['start DONE remove selected',s]);
 			if (s!=null && s.node && s.node.id !=null ) {
-				SpringyMap.confirm('Really delete selected node <b>'+s.node.data.label+'</b>? <b>Yes</b> or <b>No</b>', function() {
+				speechify.confirm('Really delete selected node <b>'+s.node.data.label+'</b>? <b>Yes</b> or <b>No</b>', function() {
 					springy.graph.detachNode(s.node);
 					springy.graph.removeNode(s.node);
 					//console.log(['DONE remove selected',s]);
@@ -250,11 +221,12 @@ var SpringyMap = {
 			}
 		// EXPLICIT NAME
 		} else {
-			SpringyMap.requireVariable('$node','Which note do you want to delete ?',variables, 
+			speechify.requireVariable('$node','Which note do you want to delete ?',variables, 
 				function(value) {
 					var node = springy.graph.findNode(value);
 					if (node != null) {
-						SpringyMap.confirm('Do you really want to delete note <b>'+node.data.label+'</b>',function() {
+						springy.renderer.setSelected(node);
+						speechify.confirm('Do you really want to delete note <b>'+node.data.label+'</b>  <b>Yes</b> or <b>No</b>',function() {
 							springy.graph.detachNode(node);
 							springy.graph.removeNode(node);
 							SpringyMap.putMap();
