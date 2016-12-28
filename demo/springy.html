@@ -395,7 +395,7 @@ var SpringyMap = {
 	resetMap: 	function(params) {
 		//console.log('reset demo data');
 		//graph = new Springy.Graph();
-		SpringyMap.confirm('Really clear map and load sample data?', function() {
+		speechify.confirm('Really clear map and load sample data?', function() {
 			addSampleDataToGraph(graph);
 			renderer.setSelected(null);
 			SpringyMap.putMap();
@@ -453,7 +453,7 @@ var SpringyMap = {
 		var variables = params[1];
 		if (variables.hasOwnProperty('$mapName')) {
 			//TODO EXISTENCE CHECK
-			SpringyMap.confirm('Really save map as <b>'+variables['$mapName']+'</b>?', function() {
+			speechify.confirm('Really save map as <b>'+variables['$mapName']+'</b>?', function() {
 				SpringyMap.putMap(variables['$mapName'])
 				jQuery.fn.speechify.notify("Saved map as " + variables['$mapName']);
 			});
@@ -465,7 +465,7 @@ var SpringyMap = {
 		//console.log(['newMap',params]);
 		var variables = params[1];
 		if (variables.hasOwnProperty('$mapName') && variables['$mapName'].length >0) {
-			SpringyMap.confirm('Really create new map <b>'+variables['$mapName']+'</b>? <b>Yes</b> or <b>No</b>', function() {
+			speechify.confirm('Really create new map <b>'+variables['$mapName']+'</b>? <b>Yes</b> or <b>No</b>', function() {
 				graph.edges = [];
 				graph.nodes = [];
 				graph.nodeSet = {};
@@ -494,7 +494,7 @@ var SpringyMap = {
 		var variables = params[1];
 		if (variables.hasOwnProperty('$mapName')) {
 			if (localStorage.getItem(variables['$mapName']) != null)  {
-				SpringyMap.confirm('Really delete map <b>'+variables['$mapName']+'</b>? <b>Yes</b> or <b>No</b>', function() {
+				speechify.confirm('Really delete map <b>'+variables['$mapName']+'</b>? <b>Yes</b> or <b>No</b>', function() {
 					localStorage.removeItem(variables['$mapName']);
 					jQuery.fn.speechify.notify('Deleted map '+variables['$mapName']);
 				});
@@ -508,7 +508,7 @@ var SpringyMap = {
 	},
 	clearMap: function(params) {
 		//console.log(['clear Map',params]);
-		SpringyMap.confirm('Do you really want to delete all notes from this map? <b>Yes</b> or <b>No</b>',function() {
+		speechify.confirm('Do you really want to delete all notes from this map? <b>Yes</b> or <b>No</b>',function() {
 			graph.edges = [];
 			graph.nodes = [];
 			graph.nodeSet = {};
