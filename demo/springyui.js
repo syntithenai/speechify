@@ -403,7 +403,7 @@ jQuery.fn.springy = function(params) {
 
 		return false;
 	}
-	console.log(['this',this]);
+	//console.log(['this',this]);
 	return this;
 }
 

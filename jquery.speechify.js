@@ -668,6 +668,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 	var variableGrammars = {};
 	var activeGrammars = {};
 	var overlayGrammars = {};
+	var overlayGrammarStack=[];
 	var override = false;   // should active grammars be considered when there are overlay grammars
 
 	var methods={
@@ -680,6 +681,11 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			}
 			console.log('ADD OVERLAY');
 			console.log([grammars,overlayGrammars]);
+			// push any existing grammar to stack for retrieval later
+			if (overlayGrammars != null && overlayGrammars.length > 0) {
+				overlayGrammarStack.push(overlayGrammars);
+				overlayGrammars = {};
+			}
 			addGrammars(grammars,overlayGrammars);
 			jQuery.fn.speechify.notify(question);
 		},
@@ -721,14 +727,16 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 		confirm: function (question,successCallback) {
 			methods.ask(
 				question,
-				[[['$yesno{yes|no}'],function(parameters) {
+				[[['$yesno{yes|no|ok|cancel}'],function(parameters) {
 							var variables = parameters[1];
-							if (variables.hasOwnProperty('$yesno') && variables['$yesno']=="yes") {
+							if (variables.hasOwnProperty('$yesno') && (variables['$yesno']=="yes" || variables['$yesno']=="ok")) {
 								successCallback();
 								methods.clearOverlay();
-							} else {
+							} else if (variables.hasOwnProperty('$yesno') && (variables['$yesno']=="no" || variables['$yesno']=="cancel")) {
 								jQuery.fn.speechify.notify('Cancelled.');
 								methods.clearOverlay();
+							} else {
+								jQuery.fn.speechify.notify('<b>I could not understand you.</b> <br>' + question);
 							}
 						}
 					]
@@ -742,8 +750,14 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			console.log('CLEAR OVERLAY');
 			delete overlayGrammars;
 			overlayGrammars = {};
+			// replace any prior grammar from the  stack
+			if (overlayGrammarsStack != null && overlayGrammarsStack.length > 0) {
+				overlayGrammars = overlayGrammarStack.pop();
+			} else {
+				override = false;
+			}
 			console.log(overlayGrammars);
-			override = false;
+			
 		},
 		runTests : function(grammarStrings,testSuite) {
 			var logged = '';

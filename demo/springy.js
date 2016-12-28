@@ -158,25 +158,51 @@
 	};
 
 	Graph.prototype.findNode = function(title) {
-		for (var i = 0; i < this.nodes.length; i++ ) {
-			if (this.nodes[i].data && this.nodes[i].data.label && typeof title == "string" && typeof this.nodes[i].data.label == "string" && this.nodes[i].data.label.toLowerCase().trim() == title.toLowerCase().trim()) {
-				console.log(['FOUND',,title,this.nodes[i].data.label]);
-				return this.nodes[i];
-			}
+		var foundNodes = Graph.findNodes(title);
+		if (foundNodes != null && foundNodes.length > 0)
+			return foundNodes[0];
+		else {
+			return null;
 		}
-		console.log(['FAILED TO FIND ',title]);
-		return null;
 	}
 	
 	Graph.prototype.findNodes = function(title) {
 		var matchingNodes = [];
+		var foundNodes={};
 		for (var i = 0; i < this.nodes.length; i++ ) {
-			if (this.nodes[i].data && this.nodes[i].data.label && typeof title == "string" && typeof this.nodes[i].data.label == "string" && this.nodes[i].data.label.toLowerCase().trim() == title.toLowerCase().trim()) {
-				console.log(['FOUND',,title,this.nodes[i].data.label]);
-				matchingNodes.push(this.nodes[i]);
+			if (this.nodes[i].data && this.nodes[i].data.label && typeof title == "string" && typeof this.nodes[i].data.label == "string") {
+				if (this.nodes[i].data.label.toLowerCase().trim() == title.toLowerCase().trim()) {
+					matchingNodes.push(this.nodes[i]);
+					foundNodes[this.nodes[i].id]='1';
+				}
 			}
 		}
+		// no perfect match then try for match from start
+		if (matchingNodes.length ==0 ) {
+			for (var i = 0; i < this.nodes.length; i++ ) {
+				if (this.nodes[i].data && this.nodes[i].data.label && typeof title == "string" && typeof this.nodes[i].data.label == "string") {
+					if (this.nodes[i].data.label.toLowerCase().trim().startsWith(title.toLowerCase().trim()) && !foundNodes.hasOwnProperty(this.nodes[i].id)) {
+						matchingNodes.push(this.nodes[i]);
+						foundNodes[this.nodes[i].id]='1';
+					}
+				}
+			}
+		}
+		// no starts with match then try for match anywhere inside
+		if (matchingNodes.length ==0 ) {
+			for (var i = 0; i < this.nodes.length; i++ ) {
+				if (this.nodes[i].data && this.nodes[i].data.label && typeof title == "string" && typeof this.nodes[i].data.label == "string") {
+					if (this.nodes[i].data.label.toLowerCase().trim().indexOf(title.toLowerCase().trim()) !== -1 && !foundNodes.hasOwnProperty(this.nodes[i].id)) {
+						matchingNodes.push(this.nodes[i]);
+						foundNodes[this.nodes[i].id]='1';
+					}
+				}
+			}
+		}
+		console.log(['FOUND',matchingNodes]);
 		return matchingNodes;
+		
+					
 	}
 	
 	Graph.prototype.findEdges = function(fromLabel,toLabel) {
