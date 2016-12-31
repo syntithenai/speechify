@@ -538,9 +538,9 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				//if (speechRecognitionHandler != null) speechRecognitionHandler.stop();
 				// if we're already listening, just restart the speech handler
 				restartCount++;
-				if (recognising && restartCount > 10) {
+				if (restartCount > 10) {
 					pauseRecognising();
-				} else if (!recognising && restartCount > 50) {
+				} else if (restartCount > 15) {
 					stopRecognising();
 				} else {
 					// kick the recognition
@@ -570,8 +570,9 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 
 			function stopRecognising() {
 				console.log('CO');
+				restartCount = 0;
 				methods.clearOverlay();
-				if (recognising) {
+				//if (recognising) {
 					recognising=false;
 					handlerStarted=false;
 					if (speechRecognitionHandler != null) speechRecognitionHandler.stop();
@@ -580,7 +581,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 					$('#speechify-status').html('<span class="microphone microphone-off"><img alt="off" src="'+$.fn.speechify.relPath+'images/microphonepause.png" ></span>');
 					$('#speechify-status').unbind('click.speechifystart').bind('click.speechifystart',function() {startRecognising();});
 					$('.voice-help').hide();
-				}
+				//}
 			}
 			
 			function joinThreeStrings(a,b,c) {
@@ -687,7 +688,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				overlayGrammars = {};
 			}
 			addGrammars(grammars,overlayGrammars);
-			jQuery.fn.speechify.notify(question);
+			jQuery.fn.speechify.notify(question,0);
 		},
 		/* Require the key variable in variables to be non empty 
 		 * or trigger a request for the value with an override vocabulary.
@@ -730,8 +731,8 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				[[['$yesno{yes|no|ok|cancel}'],function(parameters) {
 							var variables = parameters[1];
 							if (variables.hasOwnProperty('$yesno') && (variables['$yesno']=="yes" || variables['$yesno']=="ok")) {
-								successCallback();
 								methods.clearOverlay();
+								successCallback();
 							} else if (variables.hasOwnProperty('$yesno') && (variables['$yesno']=="no" || variables['$yesno']=="cancel")) {
 								jQuery.fn.speechify.notify('Cancelled.');
 								methods.clearOverlay();
@@ -837,17 +838,24 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				speechRecognitionHandler.lang='en-AU';
 				speechRecognitionHandler.continuous = false;
 				speechRecognitionHandler.maxAlternatives = 5;
-				//console.log(['init with handler',speechRecognitionHandler]);
+				console.log(['init with handler',speechRecognitionHandler]);
 				
 				
-				//speechRecognitionHandler.onstart = function() {console.log('onstart');}
-				//speechRecognitionHandler.onend = function() {console.log('onend');}
-				speechRecognitionHandler.onaudiostart = function() {$('#speechify-status .microphone img').css('border','2px solid green');}
-				speechRecognitionHandler.onaudioend = function() {$('#speechify-status .microphone img').css('border','2px solid red');}
+				speechRecognitionHandler.onstart = function() {console.log('onstart');}
+				speechRecognitionHandler.onend = function() {console.log('onend');}
+				speechRecognitionHandler.onaudiostart = function() {
+					console.log('audiostart');
+					$('#speechify-status .microphone img').css('border','2px solid green');
+				}
+				speechRecognitionHandler.onaudioend = function() {
+					console.log('audioend');
+					$('#speechify-status .microphone img').css('border','2px solid red');
+				}
+				
 				speechRecognitionHandler.onsoundstart = function() {$('#speechify-status .microphone img').css('border','2px solid blue');}
 				speechRecognitionHandler.onsoundend = function() {$('#speechify-status .microphone img').css('border','2px solid orange');}
-				//speechRecognitionHandler.onspeechstart = function() {console.log('onspeechstart');}
-				//speechRecognitionHandler.onspeechend = function() {console.log('onspeechend');}
+				speechRecognitionHandler.onspeechstart = function() {console.log('onspeechstart');}
+				speechRecognitionHandler.onspeechend = function() {console.log('onspeechend');}
 				
 				speechRecognitionHandler.onresult = function(event){
 					restartCount = 0;
@@ -912,7 +920,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				};
 				
 				speechRecognitionHandler.onstart = function(){
-					//console.log('start speech recognition');
+					console.log('start speech recognition');
 				};
 				speechRecognitionHandler.onerror = function(e){
 					switch (e.error) {
@@ -937,6 +945,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				//console.log('start recog');
 				startRecognising();
 			} catch (e) {
+				console.log('EEEK');
 				console.log(e.message);
 			}
 			
@@ -963,6 +972,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 
 	// duration 0 for persistent message
 	$.fn.speechify.notify=function(text,duration) {
+		console.log(['notify',duration,text]);
 		var newMessage=$('<span class="message" >' + text + '</span>');
 		duration = duration!==undefined ? duration : 15000;
 		$("#speechify-status .microphone .speechifymessages").html(newMessage);
@@ -970,12 +980,13 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 		if (duration > 0) {
 			setTimeout(function() {
 				newMessage.hide('slow');
-				$("#speechify-status .microphone .speechifymessages").hide('slow');
+				if ($("#speechify-status .microphone .speechifymessages .message").length == 0) {
+					$("#speechify-status .microphone .speechifymessages").hide('slow');
+				}
 			},duration);
 		}
 	};
-		// duration 0 for persistent message
-	$.fn.speechify.clearNotify=function() {
+	$.fn.speechify.disclearNotify=function() {
 		$("#speechify-status .microphone .speechifymessages").hide();
 		$("#speechify-status .microphone .speechifymessages").html('');
 	};

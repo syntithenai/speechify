@@ -48,7 +48,7 @@
 		this.nodes = [];
 		this.edges = [];
 		this.adjacency = {};
-
+		this.selected = null;
 		this.nextNodeId = 1;
 		this.nextEdgeId = 1;
 		this.eventListeners = [];
@@ -74,7 +74,14 @@
 	// this.data.length
 	// this.data.type
 	};
-
+	Graph.prototype.getSelected = function() {
+		//console.log(['get sel',this.selected]);
+		return this.selected;
+	};
+	Graph.prototype.setSelected = function(node) {
+		//console.log(['set sel',this.selected,node]);
+		this.selected = node ;
+	};
 	Graph.prototype.addNode = function(node) {
 		if (!(node.id in this.nodeSet)) {
 			this.nodes.push(node);
@@ -158,12 +165,23 @@
 	};
 
 	Graph.prototype.findNode = function(title) {
-		var foundNodes = Graph.findNodes(title);
+		var foundNodes = this.findNodes(title);
 		if (foundNodes != null && foundNodes.length > 0)
 			return foundNodes[0];
 		else {
 			return null;
 		}
+	}
+	
+
+	Graph.prototype.findChildren = function(parent) {
+		var matchingNodes = [];
+		for (var i = 0; i < this.nodes.length; i++ ) {
+			if ( parent != null && parent.hasOwnProperty('id') && this.adjacency.hasOwnProperty(this.nodes[i].id)  && this.adjacency[this.nodes[i].id].hasOwnProperty(parent.id)) {
+				matchingNodes.push(this.nodes[i]);
+			}
+		}
+		return matchingNodes;
 	}
 	
 	Graph.prototype.findNodes = function(title) {
