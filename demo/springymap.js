@@ -273,7 +273,7 @@ var SpringyMap = {
 				jQuery.fn.speechify.notify('Could not move note.' );
 			}
 		);
-	}
+	},
 	moveNode: function(params) {
 		var variables = params[1];
 		speechify.requireVariable('$node','Which note do you want to move ?',variables, 
