@@ -4,26 +4,34 @@
 <script src="springymap.js"></script>
 <script src="springymap.htmlrenderer.js"></script>
 <style>
-#textrender > div {
+#textrender {
+	background-color: lightgrey;
+}
+#textrender .node .node{
 	text-indent: 1em;
 }
-#dtextrender  div  label {
-	border: 1px solid black;
+#textrender .node .node .node{
+	text-indent: 2em;
 }
-#textrender > div > div {
+#textrender .node .node .node .node {
 	text-indent: 3em;
 }
-#textrender > div > div > div{
-	text-indent: 5em;
+#textrender .node .node .node .node .node {
+	text-indent: 4em;
 }
-#textrender > div > div > div > div{
-	text-indent: 5em;
-	display: inline;
-	background-color: lime;
+#textrender .node .node .node .node .node {
+	
 }
-#textrender  label.selected {
+#textrender .node .node .node .node .node {
+	
+}
+#textrender  .selectednode {
 	background-color: red !important;
 }
+.selectedtext {
+	color: green;	
+}
+
 </style>
 <body>
 <div id="speechcontrols" ></div>

@@ -571,7 +571,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			function stopRecognising() {
 				console.log('CO');
 				restartCount = 0;
-				methods.clearOverlay();
+				methods.clearAllOverlays();
 				//if (recognising) {
 					recognising=false;
 					handlerStarted=false;
@@ -754,12 +754,22 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			// replace any prior grammar from the  stack
 			if (overlayGrammarsStack != null && overlayGrammarsStack.length > 0) {
 				overlayGrammars = overlayGrammarStack.pop();
+				console.log(['CLEAR OVERLAY restore/pop grammar',overlayGrammars]);
 			} else {
 				override = false;
 			}
 			console.log(overlayGrammars);
 			
 		},
+		clearAllOverlays: function() {
+			console.log('CLEAR ALL OVERLAY');
+			delete overlayGrammars;
+			overlayGrammars = {};
+			delete overlayGrammarStack;
+			overlayGrammarStack = [];
+			override = false;
+		},
+
 		runTests : function(grammarStrings,testSuite) {
 			var logged = '';
 			var clog = function(toLog) {

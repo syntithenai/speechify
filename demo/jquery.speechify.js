@@ -538,9 +538,9 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				//if (speechRecognitionHandler != null) speechRecognitionHandler.stop();
 				// if we're already listening, just restart the speech handler
 				restartCount++;
-				if (recognising && restartCount > 10) {
+				if (restartCount > 10) {
 					pauseRecognising();
-				} else if (!recognising && restartCount > 50) {
+				} else if (restartCount > 15) {
 					stopRecognising();
 				} else {
 					// kick the recognition
@@ -570,8 +570,9 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 
 			function stopRecognising() {
 				console.log('CO');
-				methods.clearOverlay();
-				if (recognising) {
+				restartCount = 0;
+				methods.clearAllOverlays();
+				//if (recognising) {
 					recognising=false;
 					handlerStarted=false;
 					if (speechRecognitionHandler != null) speechRecognitionHandler.stop();
@@ -580,7 +581,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 					$('#speechify-status').html('<span class="microphone microphone-off"><img alt="off" src="'+$.fn.speechify.relPath+'images/microphonepause.png" ></span>');
 					$('#speechify-status').unbind('click.speechifystart').bind('click.speechifystart',function() {startRecognising();});
 					$('.voice-help').hide();
-				}
+				//}
 			}
 			
 			function joinThreeStrings(a,b,c) {
@@ -668,6 +669,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 	var variableGrammars = {};
 	var activeGrammars = {};
 	var overlayGrammars = {};
+	var overlayGrammarStack=[];
 	var override = false;   // should active grammars be considered when there are overlay grammars
 
 	var methods={
@@ -678,32 +680,41 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			for (i in grammarTree) {
 				grammars.push(new SpeechifyGrammar(grammarTree[i][0],grammarTree[i][1]));
 			}
-			console.log('ADD OVERLAY');
-			console.log([grammars,overlayGrammars]);
+			console.log(['PUSH OVERLAY',grammars,overlayGrammars]);
+			// push any existing grammar to stack for retrieval later
+			if (overlayGrammars != null && overlayGrammars.length > 0) {
+				console.log(['PUSH OVERLAY REALLY']);
+
+				overlayGrammarStack.push(overlayGrammars);
+				overlayGrammars = {};
+				console.log(['PUSH OVERLAY REALLY DONE',overlayGrammarStack]);
+
+			}
 			addGrammars(grammars,overlayGrammars);
-			jQuery.fn.speechify.notify(question);
+			jQuery.fn.speechify.notify(question,0);
 		},
 		/* Require the key variable in variables to be non empty 
 		 * or trigger a request for the value with an override vocabulary.
 		*/
 		requireVariable: function (variable,question,variables,successCallback,failCallback) {
-			//console.log(['REQUIRE VAR',variable,question,variables]);
+			console.log(['REQUIRE VAR',variable,question,variables]);
 			if (variables.hasOwnProperty(variable) && variables[variable].length>0) {
-				//console.log(['REQUIRE VAR ALREADY OK']);
-				methods.clearOverlay();
+				console.log(['REQUIRE VAR ALREADY OK']);
+				//methods.clearOverlay();
 				successCallback(variables[variable]);
 			} else {
-				//console.log(['REQUIRE VAR ASK']);
+				console.log(['REQUIRE VAR ASK']);
 				methods.ask(
 					question,
 					[
 					[['$value'],function(parameters) {
 						var innerVariables=parameters[1];
-						//console.log(['REQUIRE VAR ASK CALLBACK',innerVariables]);
+						console.log(['REQUIRE VAR ASK CALLBACK',innerVariables]);
 						if (innerVariables.hasOwnProperty('$value') && innerVariables['$value'].length > 0) {
-							//console.log(['REQUIRE VAR save',innerVariables]);
+							console.log(['REQUIRE VAR save',innerVariables]);
 							methods.clearOverlay();
-							successCallback(innerVariables['$value']);
+							successCallback(innerVariables['$value'],function () {methods.clearOverlay();});
+							
 						} else {
 							methods.clearOverlay();
 							failCallback();
@@ -721,14 +732,16 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 		confirm: function (question,successCallback) {
 			methods.ask(
 				question,
-				[[['$yesno{yes|no}'],function(parameters) {
+				[[['$yesno{yes|no|ok|cancel}'],function(parameters) {
 							var variables = parameters[1];
-							if (variables.hasOwnProperty('$yesno') && variables['$yesno']=="yes") {
+							if (variables.hasOwnProperty('$yesno') && (variables['$yesno']=="yes" || variables['$yesno']=="ok")) {
+								methods.clearOverlay();
 								successCallback();
+							} else if (variables.hasOwnProperty('$yesno') && (variables['$yesno']=="no" || variables['$yesno']=="cancel")) {
 								methods.clearOverlay();
-							} else {
 								jQuery.fn.speechify.notify('Cancelled.');
-								methods.clearOverlay();
+							} else {
+								jQuery.fn.speechify.notify('<b>I could not understand you.</b> <br>' + question);
 							}
 						}
 					]
@@ -739,12 +752,27 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			console.log(['DUMP OVERLAY',overlayGrammars]);
 		},
 		clearOverlay: function() {
-			console.log('CLEAR OVERLAY');
+			console.log('CLEAR OVERLAY',overlayGrammars,overlayGrammarStack.length,overlayGrammarStack);
 			delete overlayGrammars;
 			overlayGrammars = {};
+			// replace any prior grammar from the  stack
+			if (overlayGrammarStack != null && overlayGrammarStack.length > 0) {
+				overlayGrammars = overlayGrammarStack.pop();
+				console.log(['POP CLEAR OVERLAY restore/pop grammar',overlayGrammars]);
+			} else {
+				override = false;
+			}
 			console.log(overlayGrammars);
+			
+		},
+		clearAllOverlays: function() {
+			console.log('CLEAR ALL OVERLAY');
+			delete overlayGrammars;
+			overlayGrammars = {};
+			overlayGrammarStack = [];
 			override = false;
 		},
+
 		runTests : function(grammarStrings,testSuite) {
 			var logged = '';
 			var clog = function(toLog) {
@@ -795,11 +823,11 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 		},
 		init : function(options) {
 			pluginDOM=this;
-			options=$.extend({forceHttps:true,'relPath':''},options);
+			options=$.extend({forceHttps:false,'relPath':''},options);
 			//console.log('INIT');
 			//console.log(options);
 			if (options.forceHttps) {
-				//if (window.location.protocol!='https:') window.location='https://'+window.location.hostname+window.location.pathname; 
+				if (window.location.protocol!='https:') window.location='https://'+window.location.hostname+window.location.pathname; 
 			} 
 			
 			
@@ -823,17 +851,32 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				speechRecognitionHandler.lang='en-AU';
 				speechRecognitionHandler.continuous = false;
 				speechRecognitionHandler.maxAlternatives = 5;
-				//console.log(['init with handler',speechRecognitionHandler]);
+				console.log(['init with handler',speechRecognitionHandler]);
 				
 				
-				//speechRecognitionHandler.onstart = function() {console.log('onstart');}
-				//speechRecognitionHandler.onend = function() {console.log('onend');}
-				speechRecognitionHandler.onaudiostart = function() {$('#speechify-status .microphone img').css('border','2px solid green');}
-				speechRecognitionHandler.onaudioend = function() {$('#speechify-status .microphone img').css('border','2px solid red');}
+				speechRecognitionHandler.onstart = function() {
+					//console.log('onstart');
+				}
+				speechRecognitionHandler.onend = function() {
+					//console.log('onend');
+				}
+				speechRecognitionHandler.onaudiostart = function() {
+					//console.log('audiostart');
+					$('#speechify-status .microphone img').css('border','2px solid green');
+				}
+				speechRecognitionHandler.onaudioend = function() {
+					//console.log('audioend');
+					$('#speechify-status .microphone img').css('border','2px solid red');
+				}
+				
 				speechRecognitionHandler.onsoundstart = function() {$('#speechify-status .microphone img').css('border','2px solid blue');}
 				speechRecognitionHandler.onsoundend = function() {$('#speechify-status .microphone img').css('border','2px solid orange');}
-				//speechRecognitionHandler.onspeechstart = function() {console.log('onspeechstart');}
-				//speechRecognitionHandler.onspeechend = function() {console.log('onspeechend');}
+				speechRecognitionHandler.onspeechstart = function() {
+					//console.log('onspeechstart');
+				}
+				speechRecognitionHandler.onspeechend = function() {
+					//console.log('onspeechend');
+				}
 				
 				speechRecognitionHandler.onresult = function(event){
 					restartCount = 0;
@@ -898,7 +941,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				};
 				
 				speechRecognitionHandler.onstart = function(){
-					//console.log('start speech recognition');
+					console.log('start speech recognition');
 				};
 				speechRecognitionHandler.onerror = function(e){
 					switch (e.error) {
@@ -923,6 +966,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				//console.log('start recog');
 				startRecognising();
 			} catch (e) {
+//				console.log('EEEK');
 				console.log(e.message);
 			}
 			
@@ -949,6 +993,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 
 	// duration 0 for persistent message
 	$.fn.speechify.notify=function(text,duration) {
+		console.log(['notify',duration,text]);
 		var newMessage=$('<span class="message" >' + text + '</span>');
 		duration = duration!==undefined ? duration : 15000;
 		$("#speechify-status .microphone .speechifymessages").html(newMessage);
@@ -956,12 +1001,13 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 		if (duration > 0) {
 			setTimeout(function() {
 				newMessage.hide('slow');
-				$("#speechify-status .microphone .speechifymessages").hide('slow');
+				if ($("#speechify-status .microphone .speechifymessages .message").length == 0) {
+					$("#speechify-status .microphone .speechifymessages").hide('slow');
+				}
 			},duration);
 		}
 	};
-		// duration 0 for persistent message
-	$.fn.speechify.clearNotify=function() {
+	$.fn.speechify.disclearNotify=function() {
 		$("#speechify-status .microphone .speechifymessages").hide();
 		$("#speechify-status .microphone .speechifymessages").html('');
 	};

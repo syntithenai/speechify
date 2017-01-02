@@ -103,6 +103,7 @@
 		}
 	};
 
+
 	Graph.prototype.addEdge = function(edge) {
 		var exists = false;
 		this.edges.forEach(function(e) {

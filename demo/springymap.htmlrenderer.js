@@ -35,9 +35,10 @@ var HtmlRenderer = function() {
 				var thisSelection = graph.getSelected();
 				//console.log(['SL',thisSelection]);
 				if (thisSelection != null && thisSelection.id == node.id) {
-					selectedText = ' class="selected" ';
+					selectedText = ' class="selectednode" ';
 				}
-				content += '<div class="rootnode node" id="'+node.id+'"><label'+ selectedText +'>' + node.data.label +'</label>';
+				content += '<div class="rootnode node" id="'+node.id+'"><h2'+ selectedText +'>' + node.data.label +'</h2><div class="content" >' + (node.data.content ? node.data.content : '') +'</div>';
+				
 				// children of this node recursively
 				content += methods.renderChildNodes(node,depth,collatedByParent);
 				content += "</div>\n";
@@ -58,9 +59,13 @@ var HtmlRenderer = function() {
 					var selectedTextI='';
 					var thisSelection = graph.getSelected();
 					if (thisSelection != null && thisSelection.id == child.id) {
-						selectedTextI = ' class="selected" ';
+						selectedTextI = ' class="selectednode" ';
 					}
-					content += '<div class="node" id="'+child.id+'" ><label'+ selectedTextI +'>' + child.data.label +'</label>';
+					var headingLevel = depth+3;
+					if (headingLevel > 6) {
+						headingLevel = 6;
+					}
+					content += '<div class="node" id="'+child.id+'" ><h' + headingLevel+ selectedTextI +'>' + child.data.label +'</h'+headingLevel+'><div class="content" >' + (child.data.content ? child.data.content : '') +'</div>';
 					// children of this node recursively
 					content += methods.renderChildNodes(child,depth+1,collated);
 					content += "</div>\n";
