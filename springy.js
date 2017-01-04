@@ -49,6 +49,7 @@
 		this.edges = [];
 		this.adjacency = {};
 		this.selected = null;
+		this.edited = null;
 		this.nextNodeId = 1;
 		this.nextEdgeId = 1;
 		this.eventListeners = [];
@@ -81,6 +82,12 @@
 	Graph.prototype.setSelected = function(node) {
 		//console.log(['set sel',this.selected,node]);
 		this.selected = node ;
+	};
+	Graph.prototype.getEdited = function() {
+		return this.edited;
+	};
+	Graph.prototype.setEdited = function(node) {
+		this.edited = node ;
 	};
 	Graph.prototype.addNode = function(node) {
 		if (!(node.id in this.nodeSet)) {

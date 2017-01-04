@@ -1,5 +1,16 @@
 var HtmlRenderer = function() {
-	var selected = null;
+	
+	function isEditing(node) {
+		var edited = graph.getEdited();
+		console.log(['CHECK EDITING',node,edited]);
+		if (node!=null && node.hasOwnProperty('id') && edited!=null && edited.hasOwnProperty('id') && node.id == edited.id) {
+			console.log(['CHECK EDITING match']);
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
 	var methods = {
 		graphChanged: function() {
 			console.log('g changed');
@@ -32,12 +43,16 @@ var HtmlRenderer = function() {
 				var depth = 0;
 				var node = graph.nodeSet[rootNodes[i]];
 				var selectedText='';
+				var selectedTextN='';
 				var thisSelection = graph.getSelected();
 				//console.log(['SL',thisSelection]);
 				if (thisSelection != null && thisSelection.id == node.id) {
 					selectedText = ' class="selectednode" ';
 				}
-				content += '<div class="rootnode node" id="'+node.id+'"><h2'+ selectedText +'>' + node.data.label +'</h2><div class="content" >' + (node.data.content ? node.data.content : '') +'</div>';
+				if (isEditing(node)) {
+					selectedTextN = ' editingnode';
+				}
+				content += '<div id="'+node.id+'" class="rootnode node' + selectedTextN + '" ><label'+ selectedText +'>' + node.data.label +'</label><div class="content" >' + (Boolean(node.data.content) ? node.data.content : '') +'</div>';
 				
 				// children of this node recursively
 				content += methods.renderChildNodes(node,depth,collatedByParent);
@@ -57,15 +72,21 @@ var HtmlRenderer = function() {
 					var child = graph.nodeSet[collated[node.id][i]];
 					//console.log(['renderkids child',child]);
 					var selectedTextI='';
+					var selectedTextN='';
 					var thisSelection = graph.getSelected();
 					if (thisSelection != null && thisSelection.id == child.id) {
 						selectedTextI = ' class="selectednode" ';
 					}
+					if (isEditing(child)) {
+						selectedTextN = ' class="editingnode" ';
+						
+					}
+					console.log('is edtign ? ',child,isEditing(child));
 					var headingLevel = depth+3;
 					if (headingLevel > 6) {
 						headingLevel = 6;
 					}
-					content += '<div class="node" id="'+child.id+'" ><h' + headingLevel+ selectedTextI +'>' + child.data.label +'</h'+headingLevel+'><div class="content" >' + (child.data.content ? child.data.content : '') +'</div>';
+					content += '<div class="node" id="'+child.id+'" ' + selectedTextN +' ><label '+  selectedTextI +'>' + child.data.label +'</label><div class="content" >' + (Boolean(child.data.content) ? child.data.content : '') +'&nbsp;</div>';
 					// children of this node recursively
 					content += methods.renderChildNodes(child,depth+1,collated);
 					content += "</div>\n";

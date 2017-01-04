@@ -88,8 +88,8 @@ var SpringyMap = {
 						var chosen = parameters[1]['$number'].replace("number ","");
 						//console.log(['CHOSEN',chosen]);
 						chosen = parseInt(chosen.replace("one","1").replace("two","2").replace("three","3").replace("four","4").replace("five","5").replace("six","6").replace("seven","7").replace("eight","8").replace("nine","9"));
-						//console.log(['CHOSEN',chosen]);
-						if (chosen != NaN) {
+						console.log(['CHOSEN',chosen, typeof chosen]);
+						if (typeof chosen == "number" && !isNaN(chosen) ) {
 							if (chosen > 0 && b[chosen-1] != null) {
 								graph.setSelected(b[chosen-1]);
 								renderer.graphChanged();
@@ -146,32 +146,51 @@ var SpringyMap = {
 					jQuery.fn.speechify.notify("Can't find <b>"+value+"</b> to edit.");
 				} else {
 					graph.setSelected(node);
+					graph.setEdited(node);
 					// clear the span.selectedtext tags
-					node.data.content = $('<b>'+node.data.content+'</b>').text();
+					node.data.content = $('<b>'+(Boolean(node.data.content) ? node.data.content : '') +'</b>').text();
 					renderer.graphChanged();
 					var message = "Editing <b>"+node.data.label+"</b>. <br>Text entry commands include<ul><li>stop editing</li><li>select <i>text fragment</i></li><li>replace with <i>text fragment</i></li></ul>.<br>Or just speak to dictate words after the cursor or at the end of the note.";
 					var selectedText='';
+					var selectedTextPosn=-1;
 					var selectedTextBefore='';
 					var selectedTextAfter='';
 					var previousText='';
 					var resetSelection = function() {
 						// clear the span.selectedtext tags
-						node.data.content = $('<b>'+node.data.content+'</b>').text();
+						node.data.content = $('<b>'+(Boolean(node.data.content) ? node.data.content : '')+'</b>').text();
 						selectedText='';
+						selectedTextPosn=-1;
 						selectedTextBefore='';
 						selectedTextAfter='';
+						SpringyMap.putMap();
+						renderer.graphChanged();
+					}
+					// ensure position is relative to clean text(no selected tags)
+					var setSelection = function(value,posn) {
+						node.data.content=(Boolean(node.data.content) ? node.data.content : '');
+						if (posn !==-1) { 
+							// keep calculations/text fragments for later
+							selectedTextPosn=posn;
+							selectedTextBefore=node.data.content.slice(0,posn);
+							selectedTextAfter=node.data.content.slice(posn + value.length);
+							selectedText = value;
+							// update the content
+							node.data.content = selectedTextBefore + '<span class="selectedtext" >' + value + '</span>' + selectedTextAfter;
+							return true;
+						} else {
+							return false;
+						}
 					}
 					speechify.ask(message,[
 						[['stop|finish|quit editing','cancel'],function(parameters) {
 							resetSelection();
-							renderer.graphChanged();
+							graph.setEdited(null);
 							speechify.clearOverlay();
 							jQuery.fn.speechify.notify('Finished editing.');
 						}],
-						[['edit [note|node] [$node]'+ multiContent],function(params) {
+						[['reddit|edit [note|node] [$node]'+ multiContent],function(params) {
 							resetSelection();
-							renderer.graphChanged();
-							speechify.clearOverlay();
 							SpringyMap.editNode(params);
 						}
 						],
@@ -182,20 +201,21 @@ var SpringyMap = {
 									console.log(['selected text callback',value]);
 									if (value =="all" || value =="everything") {
 										resetSelection();
-										node.data.content = '<span class="selectedtext" >' + $(node.data.content).text() + '</span>' ;
-										jQuery.fn.speechify.notify('Selected eveything.');
+										setSelection($('<b>'+(Boolean(node.data.content) ? node.data.content : '')+'</b>').text(),0);
+										renderer.graphChanged();
+										SpringyMap.putMap();
+										jQuery.fn.speechify.notify('Selected everything.');
 									} else if (value =="nothing") {
 										resetSelection();
-										renderer.graphChanged();
 										jQuery.fn.speechify.notify('Selected nothing.');
 									} else if (node.data.content != null)  {
+										// clear the span.selectedtext tags
+										node.data.content = $('<b>'+(Boolean(node.data.content) ? node.data.content : '')+'</b>').text();
+							
 										var posn = node.data.content.indexOf(value);
-										if (posn !==-1) {
-											selectedText = value;
-											// clear the span.selectedtext tags
-											node.data.content = $('<b>'+node.data.content+'</b>').text();
-											// now the messy bit, add span tags
-											node.data.content = node.data.content.slice(0,posn) + '<span class="selectedtext" >' + value + '</span>' + node.data.content.slice(posn + value.length);
+										if (setSelection(value,posn)) {
+											renderer.graphChanged();
+											SpringyMap.putMap();
 											jQuery.fn.speechify.notify('Selected text '+value);
 										} else {
 											jQuery.fn.speechify.notify('Could not find text '+value);
@@ -203,28 +223,75 @@ var SpringyMap = {
 									} else {
 										jQuery.fn.speechify.notify('Could not select in empty content.');
 									}
-									renderer.graphChanged();
 								},
 								function(e) {
+									resetSelection();
 									jQuery.fn.speechify.notify('Cancelled editing.');
-									selectedText='';
-									node.data.content = $(node.data.content).text();
 								}
 							);
 						}],
-						[['replace [text] with [$content]'],function(parameters) {
-							
+						[['replace [selected|text] with [$content]'],function(parameters) {
+							speechify.requireVariable('$content','What text do you want to inject ?',parameters[1], 
+								function(value) {
+									node.data.content = selectedTextBefore + value + selectedTextAfter;
+									jQuery.fn.speechify.notify('Replaced  <b>' + selectedText + '</b> with <b>' +value + '</b>');
+									renderer.graphChanged();
+									SpringyMap.putMap();
+								}
+							);
 						}],
 						[['(cancel that|undo|scratch that)'],function() {
-								
+							speechify.confirm('Really undo text change ?<br/><b>Yes</b> or <b>No</b>',function() {
+								node.data.content = previousText ;
+								resetSelection();
+								renderer.graphChanged();
+								SpringyMap.putMap();
+								jQuery.fn.speechify.notify('Restored.');
+							})
 						}],
 						[['delete that|selected'],function() {
-								
+							if (selectedText.trim().length > 0) {
+								console.log([selectedTextBefore ,selectedTextAfter]);
+								speechify.confirm('Really delete text <b>'+ selectedText +'</b> ?<br/><b>Yes</b> or <b>No</b>',function() {
+									previousText = $('<b>'+node.data.content+'</b>').text();
+									var tmp = selectedTextBefore + ' ' + selectedTextAfter;
+									node.data.content = tmp.trim();
+									resetSelection();
+									renderer.graphChanged();
+									SpringyMap.putMap();
+									jQuery.fn.speechify.notify('Deleted.',3000);
+								});
+							} else {
+								jQuery.fn.speechify.notify('No text selected to delete.',3000);
+							}
 						}],
+						[['full stop','.'],function() {
+							previousText = $('<b>'+node.data.content+'</b>').text();
+							renderer.graphChanged();
+							jQuery.fn.speechify.notify('TODO fullstop.');
+						}],
+						[['comma','.'],function() {
+							previousText = $('<b>'+node.data.content+'</b>').text();
+							renderer.graphChanged();
+							jQuery.fn.speechify.notify('TODO comma.');
+						}],
+						
 						[['$content'],function(parameters) {
-							previousText= $('<b>'+node.data.content+'</b>').text();
-							node.data.content = (node.data.content ? node.data.content : '') + ' '+ parameters[1]['$content'];
-							jQuery.fn.speechify.notify(node.data.content);
+							previousText = $('<b>'+node.data.content+'</b>').text();
+							// clear the span.selectedtext tags
+							node.data.content = $('<b>'+node.data.content+'</b>').text();
+							
+							if (selectedText.length>0 && selectedTextAfter.length > 0) {
+								node.data.content = selectedTextBefore + selectedText + ' ' + parameters[1]['$content'] + ' ' + selectedTextAfter;
+								var tmp = selectedTextBefore + selectedText;
+								setSelection(parameters[1]['$content'],tmp.length+1 );
+								jQuery.fn.speechify.notify('Injected '+ parameters[1]['$content']);
+							} else { 
+								var initialLength = (node.data.content ? node.data.content.length : 0);
+								node.data.content = (node.data.content ? node.data.content : '') + ' '+ parameters[1]['$content'];
+								setSelection(parameters[1]['$content'],initialLength + 1);
+								jQuery.fn.speechify.notify('Appended '+ parameters[1]['$content']);
+							}
 							renderer.graphChanged();
 							SpringyMap.putMap();
 						}]
@@ -705,7 +772,7 @@ SpringyMap.grammarTree = [
 		[['select|choose|shoes|cheers|pick|pic nothing'],SpringyMap.selectNothing],
 		[['rename [$node'+ multiContent+'] [to $newName]' +multiContent],SpringyMap.renameNode],
 		[['delete [a] [note|node] [$node]'+ multiContent],SpringyMap.deleteNode],
-		[['edit [note|node] [$node]'+ multiContent],SpringyMap.editNode],
+		[['reddit|edit [note|node] [$node]'+ multiContent],SpringyMap.editNode],
 		//[['join|connect $from'+ multiContent+' to|and $to'+ multiContent+' [as $connection'+ multiContent+']'],SpringyMap.joinNode],
 		//[['(disconnect|break|brake|remove connection) $from'+ multiContent+' to $to'+ multiContent+' [as $connection'+ multiContent+']'],SpringyMap.disconnectNode],
 		[['movenote|move [note|node] [$node'+ multiContent+'] [to $target]'+ multiContent],SpringyMap.moveNode],

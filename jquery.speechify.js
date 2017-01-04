@@ -680,37 +680,39 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			for (i in grammarTree) {
 				grammars.push(new SpeechifyGrammar(grammarTree[i][0],grammarTree[i][1]));
 			}
-			console.log('ADD OVERLAY');
-			console.log([grammars,overlayGrammars]);
+			console.log(['PUSH OVERLAY',grammarTree,grammars,overlayGrammars]);
 			// push any existing grammar to stack for retrieval later
 			if (overlayGrammars != null && overlayGrammars.length > 0) {
+				console.log(['PUSH OVERLAY CLEAR/.push']);
 				overlayGrammarStack.push(overlayGrammars);
-				overlayGrammars = {};
 			}
+			overlayGrammars = {};
 			addGrammars(grammars,overlayGrammars);
+			console.log(['PUSH OVERLAY REALLY DONE',overlayGrammarStack]);
 			jQuery.fn.speechify.notify(question,0);
 		},
 		/* Require the key variable in variables to be non empty 
 		 * or trigger a request for the value with an override vocabulary.
 		*/
 		requireVariable: function (variable,question,variables,successCallback,failCallback) {
-			//console.log(['REQUIRE VAR',variable,question,variables]);
+			console.log(['REQUIRE VAR',variable,question,variables]);
 			if (variables.hasOwnProperty(variable) && variables[variable].length>0) {
-				//console.log(['REQUIRE VAR ALREADY OK']);
-				methods.clearOverlay();
+				console.log(['REQUIRE VAR ALREADY OK']);
+				//methods.clearOverlay();
 				successCallback(variables[variable]);
 			} else {
-				//console.log(['REQUIRE VAR ASK']);
+				console.log(['REQUIRE VAR ASK']);
 				methods.ask(
 					question,
 					[
 					[['$value'],function(parameters) {
 						var innerVariables=parameters[1];
-						//console.log(['REQUIRE VAR ASK CALLBACK',innerVariables]);
+						console.log(['REQUIRE VAR ASK CALLBACK',innerVariables]);
 						if (innerVariables.hasOwnProperty('$value') && innerVariables['$value'].length > 0) {
-							//console.log(['REQUIRE VAR save',innerVariables]);
+							console.log(['REQUIRE VAR save',innerVariables]);
 							methods.clearOverlay();
-							successCallback(innerVariables['$value']);
+							successCallback(innerVariables['$value'],function () {methods.clearOverlay();});
+							
 						} else {
 							methods.clearOverlay();
 							failCallback();
@@ -731,11 +733,11 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				[[['$yesno{yes|no|ok|cancel}'],function(parameters) {
 							var variables = parameters[1];
 							if (variables.hasOwnProperty('$yesno') && (variables['$yesno']=="yes" || variables['$yesno']=="ok")) {
-								methods.clearOverlay();
 								successCallback();
-							} else if (variables.hasOwnProperty('$yesno') && (variables['$yesno']=="no" || variables['$yesno']=="cancel")) {
-								jQuery.fn.speechify.notify('Cancelled.');
 								methods.clearOverlay();
+							} else if (variables.hasOwnProperty('$yesno') && (variables['$yesno']=="no" || variables['$yesno']=="cancel")) {
+								methods.clearOverlay();
+								jQuery.fn.speechify.notify('Cancelled.');
 							} else {
 								jQuery.fn.speechify.notify('<b>I could not understand you.</b> <br>' + question);
 							}
@@ -745,16 +747,23 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			,true);
 		},
 		dumpOverlay: function() {
-			console.log(['DUMP OVERLAY',overlayGrammars]);
+			console.log(['DUMP OVERLAY']);
+			console.log(overlayGrammars);
+			console.log(overlayGrammarStack);
 		},
+		dumpGrammars: function() {
+			console.log(['DUMP ACTIVE GRAMMAR']);
+			console.log(activeGrammars);
+		},
+		
 		clearOverlay: function() {
-			console.log('CLEAR OVERLAY');
+			console.log('CLEAR OVERLAY',overlayGrammars,overlayGrammarStack.length,overlayGrammarStack);
 			delete overlayGrammars;
 			overlayGrammars = {};
 			// replace any prior grammar from the  stack
-			if (overlayGrammarsStack != null && overlayGrammarsStack.length > 0) {
+			if (overlayGrammarStack != null && overlayGrammarStack.length > 0) {
 				overlayGrammars = overlayGrammarStack.pop();
-				console.log(['CLEAR OVERLAY restore/pop grammar',overlayGrammars]);
+				console.log(['POP CLEAR OVERLAY restore/pop grammar',overlayGrammars]);
 			} else {
 				override = false;
 			}
@@ -765,7 +774,6 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			console.log('CLEAR ALL OVERLAY');
 			delete overlayGrammars;
 			overlayGrammars = {};
-			delete overlayGrammarStack;
 			overlayGrammarStack = [];
 			override = false;
 		},
@@ -820,11 +828,11 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 		},
 		init : function(options) {
 			pluginDOM=this;
-			options=$.extend({forceHttps:true,'relPath':''},options);
+			options=$.extend({forceHttps:false,'relPath':''},options);
 			//console.log('INIT');
 			//console.log(options);
 			if (options.forceHttps) {
-				//if (window.location.protocol!='https:') window.location='https://'+window.location.hostname+window.location.pathname; 
+				if (window.location.protocol!='https:') window.location='https://'+window.location.hostname+window.location.pathname; 
 			} 
 			
 			
@@ -851,21 +859,29 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				console.log(['init with handler',speechRecognitionHandler]);
 				
 				
-				speechRecognitionHandler.onstart = function() {console.log('onstart');}
-				speechRecognitionHandler.onend = function() {console.log('onend');}
+				speechRecognitionHandler.onstart = function() {
+					//console.log('onstart');
+				}
+				speechRecognitionHandler.onend = function() {
+					//console.log('onend');
+				}
 				speechRecognitionHandler.onaudiostart = function() {
-					console.log('audiostart');
+					//console.log('audiostart');
 					$('#speechify-status .microphone img').css('border','2px solid green');
 				}
 				speechRecognitionHandler.onaudioend = function() {
-					console.log('audioend');
+					//console.log('audioend');
 					$('#speechify-status .microphone img').css('border','2px solid red');
 				}
 				
 				speechRecognitionHandler.onsoundstart = function() {$('#speechify-status .microphone img').css('border','2px solid blue');}
 				speechRecognitionHandler.onsoundend = function() {$('#speechify-status .microphone img').css('border','2px solid orange');}
-				speechRecognitionHandler.onspeechstart = function() {console.log('onspeechstart');}
-				speechRecognitionHandler.onspeechend = function() {console.log('onspeechend');}
+				speechRecognitionHandler.onspeechstart = function() {
+					//console.log('onspeechstart');
+				}
+				speechRecognitionHandler.onspeechend = function() {
+					//console.log('onspeechend');
+				}
 				
 				speechRecognitionHandler.onresult = function(event){
 					restartCount = 0;
@@ -955,7 +971,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				//console.log('start recog');
 				startRecognising();
 			} catch (e) {
-				console.log('EEEK');
+//				console.log('EEEK');
 				console.log(e.message);
 			}
 			

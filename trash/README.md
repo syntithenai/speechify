@@ -1,4 +1,0 @@
-speechify
-=========
-
-jquery speechify
