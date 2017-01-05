@@ -341,9 +341,9 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			 * Allow for variables and optional tokens
 			 */
 			function searchForGrammar(transcript,activeGrammars,variables,partialMatchCallback,successCallback) {
-				//console.log(['searchForGrammar',transcript,activeGrammars]);
+				console.log(['searchForGrammar',transcript,activeGrammars]);
 				if (activeGrammars != null && transcript && transcript.length > 0)  {
-					//console.log(['REALLY searchForGrammar']);
+					console.log(['REALLY searchForGrammar']);
 					
 					var parts = transcript.trim().split(" ");
 					var current = activeGrammars;
@@ -383,7 +383,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 											//variables[currentVar] = transcriptSlice; 
 											// try for match on remainder of transcript 
 											var remainder = theRest.slice(theRest.length - i ).join(" ");
-											//console.log(['variable match ',currentVar,transcriptSlice,'REM',remainder]);
+											console.log(['variable match ',currentVar,transcriptSlice,'REM',remainder]);
 											searchForGrammar(remainder,current[currentVar],variables,partialMatchCallback,
 												function (grammar,variables) { 
 													variables[currentVar] = transcriptSlice.trim(); // parts.slice(0,1).join(" "); 
@@ -430,6 +430,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			 * @param activeGrammars object Grammar tree
 			 */
 			function processTranscript(transcript,activeGrammars) {
+				console.log('PROCESS TRANSCRIPT');
 				// clean numbers from transcript
 				transcript = transcript.trim().toLowerCase();
 				var clean = false;
@@ -448,6 +449,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 					var partials = []
 					// start recursive seek grammar
 					try {
+						console.log(['start searchForGrammar ',transcript,activeGrammars,variables]);
 						searchForGrammar(
 							transcript,
 							activeGrammars,
@@ -464,12 +466,13 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 						// if we make it this far, there were no matches anywhere
 						console.log(['FAIL']);
 						var notifyMessage = "No matching command. <br/><br/>I heard <b>" + transcript + '</b>';
-						if (partials.length > 0) {
-							notifyMessage += "<br/><br/>Did you mean -<br/>";
-						}
-						for ( var i = 0; i < partials.length; i++) {
-							notifyMessage += "<br/>" + partials[i];
-						}
+						// TODO partial matches feedback
+						//if (partials.length > 0) {
+							//notifyMessage += "<br/><br/>Did you mean -<br/>";
+						//}
+						//for ( var i = 0; i < partials.length; i++) {
+							//notifyMessage += "<br/>" + partials[i];
+						//}
 						notifyMessage += "<br/><br/>For a full list try 'What can I say'<br/>";
 						jQuery.fn.speechify.notify(notifyMessage);
 					} catch (e) {
@@ -668,48 +671,43 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 
 	var variableGrammars = {};
 	var activeGrammars = {};
-	var overlayGrammars = {};
-	var overlayGrammarStack=[];
-	var override = false;   // should active grammars be considered when there are overlay grammars
-
+	var overlayGrammarsData={};
+	var overlayGrammarsStack=[];
+	
 	var methods={
-		ask: function(question,grammarTree,o) {
+		ask: function(question,grammarTree,modalGrammar) {
 			// load overlay/override grammar
-			override = o;
 			var grammars=[];
 			for (i in grammarTree) {
 				grammars.push(new SpeechifyGrammar(grammarTree[i][0],grammarTree[i][1]));
 			}
-			console.log(['PUSH OVERLAY',grammarTree,grammars,overlayGrammars]);
-			// push any existing grammar to stack for retrieval later
-			if (overlayGrammars != null && overlayGrammars.length > 0) {
-				console.log(['PUSH OVERLAY CLEAR/.push']);
-				overlayGrammarStack.push(overlayGrammars);
-			}
-			overlayGrammars = {};
+			console.log(['PUSH OVERLAY',,overlayGrammarsStack,overlayGrammarsData,grammarTree,modalGrammar]);
+			var overlayGrammars = {};
 			addGrammars(grammars,overlayGrammars);
-			console.log(['PUSH OVERLAY REALLY DONE',overlayGrammarStack]);
+			overlayGrammarsStack.push(overlayGrammars);
+			overlayGrammarsData[overlayGrammarsStack.length - 1] = {'modalGrammar': modalGrammar}; 
+			console.log(['PUSH OVERLAY REALLY DONE',overlayGrammarsStack,overlayGrammarsData]);
 			jQuery.fn.speechify.notify(question,0);
 		},
 		/* Require the key variable in variables to be non empty 
 		 * or trigger a request for the value with an override vocabulary.
 		*/
 		requireVariable: function (variable,question,variables,successCallback,failCallback) {
-			console.log(['REQUIRE VAR',variable,question,variables]);
+			//console.log(['REQUIRE VAR',variable,question,variables]);
 			if (variables.hasOwnProperty(variable) && variables[variable].length>0) {
-				console.log(['REQUIRE VAR ALREADY OK']);
+				//console.log(['REQUIRE VAR ALREADY OK']);
 				//methods.clearOverlay();
 				successCallback(variables[variable]);
 			} else {
-				console.log(['REQUIRE VAR ASK']);
+				//console.log(['REQUIRE VAR ASK']);
 				methods.ask(
 					question,
 					[
 					[['$value'],function(parameters) {
 						var innerVariables=parameters[1];
-						console.log(['REQUIRE VAR ASK CALLBACK',innerVariables]);
+						//console.log(['REQUIRE VAR ASK CALLBACK',innerVariables]);
 						if (innerVariables.hasOwnProperty('$value') && innerVariables['$value'].length > 0) {
-							console.log(['REQUIRE VAR save',innerVariables]);
+							//console.log(['REQUIRE VAR save',innerVariables]);
 							methods.clearOverlay();
 							successCallback(innerVariables['$value'],function () {methods.clearOverlay();});
 							
@@ -746,36 +744,23 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				]
 			,true);
 		},
-		dumpOverlay: function() {
-			console.log(['DUMP OVERLAY']);
-			console.log(overlayGrammars);
-			console.log(overlayGrammarStack);
-		},
-		dumpGrammars: function() {
+		dump: function() {
 			console.log(['DUMP ACTIVE GRAMMAR']);
 			console.log(activeGrammars);
+			console.log(['DUMP OVERLAY']);
+			console.log(overlayGrammarsStack);
+			console.log(overlayGrammarsData);
 		},
 		
 		clearOverlay: function() {
-			console.log('CLEAR OVERLAY',overlayGrammars,overlayGrammarStack.length,overlayGrammarStack);
-			delete overlayGrammars;
-			overlayGrammars = {};
-			// replace any prior grammar from the  stack
-			if (overlayGrammarStack != null && overlayGrammarStack.length > 0) {
-				overlayGrammars = overlayGrammarStack.pop();
-				console.log(['POP CLEAR OVERLAY restore/pop grammar',overlayGrammars]);
-			} else {
-				override = false;
-			}
-			console.log(overlayGrammars);
-			
+			console.log('CLEAR OVERLAY',overlayGrammarsStack.length,overlayGrammarsStack);
+			delete overlayGrammarsData[overlayGrammarsStack.length - 1];
+			overlayGrammarsStack.pop();
 		},
 		clearAllOverlays: function() {
 			console.log('CLEAR ALL OVERLAY');
-			delete overlayGrammars;
-			overlayGrammars = {};
-			overlayGrammarStack = [];
-			override = false;
+			overlayGrammarsStack = [];
+			overlayGrammarsData = {};
 		},
 
 		runTests : function(grammarStrings,testSuite) {
@@ -924,16 +909,26 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 									replaceSelectedText(transcript);
 								// START MAIN DECISION MAKING HERE
 								} else {
-									// process overlay first
-									if (overlayGrammars!= null) {
-										console.log('PROCESS OVERLAY GRAMMAR');
-										var result = processTranscript(transcript,overlayGrammars);
-										if (!result && !override) {
-											console.log('PROCESS MAIN GRAMMAR AFTER OVERLAY');
-											processTranscript(transcript,activeGrammars);
-										} 
-									} else {
-										console.log('PROCESS MAIN GRAMMAR WITHOUT OVERLAY');
+									// process overlays first
+									var success = false;
+									console.log('PROCESS OVERLAY GRAMMARS');
+									speechify.dump();
+									for (var j = overlayGrammarsStack.length - 1 ;j >= 0 ;j--) {
+										console.log(['PROCESS OVERLAY GRAMMAR',transcript,overlayGrammarsStack[j]]);
+										var result = processTranscript(transcript,overlayGrammarsStack[j]);
+										if (result) {
+											success = true;
+											console.log('BREAK ON SUCCESS');
+											break;
+										}
+										// bail out if this was a blocking grammar
+										if (overlayGrammarsData[j].modalGrammar) {
+											console.log('BREAK ON MODAL');
+											break;
+										}
+									}
+									if (!success) {
+										console.log('PROCESS MAIN GRAMMAR');
 										processTranscript(transcript,activeGrammars);
 									}
 								}

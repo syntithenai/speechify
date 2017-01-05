@@ -2,9 +2,9 @@ var HtmlRenderer = function() {
 	
 	function isEditing(node) {
 		var edited = graph.getEdited();
-		console.log(['CHECK EDITING',node,edited]);
+		//console.log(['CHECK EDITING',node,edited]);
 		if (node!=null && node.hasOwnProperty('id') && edited!=null && edited.hasOwnProperty('id') && node.id == edited.id) {
-			console.log(['CHECK EDITING match']);
+			//console.log(['CHECK EDITING match']);
 			return true;
 		} else {
 			return false;
@@ -78,15 +78,10 @@ var HtmlRenderer = function() {
 						selectedTextI = ' class="selectednode" ';
 					}
 					if (isEditing(child)) {
-						selectedTextN = ' class="editingnode" ';
-						
+						selectedTextN = ' editingnode ';
+						//console.log('is edtign ? ',child,isEditing(child));
 					}
-					console.log('is edtign ? ',child,isEditing(child));
-					var headingLevel = depth+3;
-					if (headingLevel > 6) {
-						headingLevel = 6;
-					}
-					content += '<div class="node" id="'+child.id+'" ' + selectedTextN +' ><label '+  selectedTextI +'>' + child.data.label +'</label><div class="content" >' + (Boolean(child.data.content) ? child.data.content : '') +'&nbsp;</div>';
+					content += '<div class="node'+ selectedTextN+'" id="'+child.id+'" '  +' ><label '+  selectedTextI +'>' + child.data.label +'</label><div class="content" >' + (Boolean(child.data.content) ? child.data.content : '') +'&nbsp;</div>';
 					// children of this node recursively
 					content += methods.renderChildNodes(child,depth+1,collated);
 					content += "</div>\n";
