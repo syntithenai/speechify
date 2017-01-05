@@ -1011,5 +1011,15 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 		$("#speechify-status .microphone .speechifymessages").hide();
 		$("#speechify-status .microphone .speechifymessages").html('');
 	};
+	
+	$.fn.speechify.grammarLibrary = {
+		'color' : '(Alice Blue|Antique White|Aqua|Aquamarine|Azure|Beige|Bisque|Black|Blanched Almond|Blue|Blue Violet|Brown|Burly Wood|Cadet Blue|Chartreuse|Chocolate|Coral|Cornflower Blue|Corn silk|Crimson|Cyan|Dark Blue|Dark Cyan|Dark GoldenRod|Dark Gray|Dark Grey|Dark Green|Dark Khaki|Dark Magenta|Dark Olive Green|Dark Orange|Dark Orchid|Dark Red|Dark Salmon|Dark Sea Green|Dark Slate Blue|Dark Slate Gray|Dark Slate Grey|Dark Turquoise|Dark Violet|Deep Pink|Deep Sky Blue|Dim Gray|Dim Grey|Dodger Blue|Fire Brick|Floral White|Forest Green|Fuchsia|Gainsboro|GhostWhite|Gold|GoldenRod|Gray|Grey|Green|Green Yellow|Honey Dew|Hot Pink|Indian Red|Indigo|Ivory|Khaki|Lavender|Lavender Blush|Lawn Green|Lemon Chiffon|Light Blue|Light Coral|Light Cyan|Light GoldenRod Yellow|Light Gray|Light Grey|Light Green|Light Pink|Light Salmon|Light Sea Green|Light Sky Blue|Light Slate Gray|Light Slate Grey|Light Steel Blue|Light Yellow|Lime|Lime Green|Linen|Magenta|Maroon|Medium Aqua Marine|Medium Blue|Medium Orchid|Medium Purple|Medium Sea Green|Medium Slate Blue|Medium Spring Green|Medium Turquoise|Medium Violet Red|Midnight Blue|Mint Cream|Misty Rose|Moccasin|Navajo White|Navy|Old Lace|Olive|Olive Drab|Orange|Orange Red|Orchid|Pale Golden Rod|Pale Green|Pale Turquoise|Pale Violet Red|Papaya Whip|Peach Puff|Peru|Pink|Plum|Powder Blue|Purple|Rebecca Purple|Red|Rosy Brown|Royal Blue|Saddle Brown|Salmon|Sandy Brown|Sea Green|Sea Shell|Sienna|Silver|Sky Blue|Slate Blue|Slate Gray|Slate Grey|Snow|Spring Green|Steel Blue|Tan|Teal|Thistle|Tomato|Turquoise|Violet|Wheat|White|White Smoke|Yellow|Yellow Green)',
+		
+		'number' : '(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)',
+		
+		'date' : '[$time{$TODO} am|pm] [$day] [$month{()}] [$year]'
+		
+	}
+	
 
 }) (jQuery,window,undefined);
