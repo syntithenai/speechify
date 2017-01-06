@@ -55,6 +55,27 @@ var SpringyMap = {
 		}
 		return storedGraph;
 	},
+	setData: function (data) {
+		var storedGraph = JSON.parse(data);
+		console.log(['STORE',storedGraph]);
+		if (storedGraph != null) 	{
+			console.log(['LOADFROMSTORAGE',storedGraph]);
+			graph.edges = [];
+			graph.nodes = [];
+			graph.nodeSet = {};
+			for (var i = 0; i < storedGraph.nodes.length; i++) {
+				graph.addNode(new Springy.Node(storedGraph.nodes[i].id,storedGraph.nodes[i].data)); //[i]
+			}
+			for (var i = 0; i < storedGraph.edges.length; i++) {
+				graph.addEdge(new Springy.Edge(storedGraph.edges[i].id,graph.nodeSet[storedGraph.edges[i].source.id],graph.nodeSet[storedGraph.edges[i].target.id],storedGraph.edges[i].data));
+			} 
+			graph.nextNodeId = storedGraph.nodes.length + 2;
+			graph.nextEdgeId = storedGraph.edges.length + 2;
+			
+		}
+		return storedGraph;
+	},
+
 	addNode: function(parameters) {
 		var variables = parameters[1];
 		speechify.requireVariable('$content','Describe the note ?',variables, function(value) {
@@ -603,7 +624,7 @@ var SpringyMap = {
 		//console.log('reset demo data');
 		//graph = new Springy.Graph();
 		speechify.confirm('Really clear map and load sample data?', function() {
-			addSampleDataToGraph(graph);
+			SpringyMap.addSampleDataToGraph(graph);
 			graph.setSelected(null);
 			SpringyMap.putMap();
 			renderer.graphChanged();
@@ -616,12 +637,12 @@ var SpringyMap = {
 		commands +="[] - indicates optional <br/>";
 		commands +="| - OR options<br/>";
 		
+		commands +="<h3>Display</h3>";
+		commands +="<b>render as map|text</b><br/> ";
 		commands +="<h3>Notes</h3>";
 		commands +="<b>new</b> $thing [to $parent|selected] [as $connection]<br/>";
 		commands +="<b>select</b> $thing<br/>";
 		commands +="<b>rename</b> [$thing|selected] to $newName<br/>";
-		commands +="<b>prepend</b> $thing to $parent|selected<br/>";
-		commands +="<b>append</b> $thing to $parent|selected<br/>";
 		commands +="<h3>Tree Operations</h3>";
 		commands +="<b>move</b> $thing to top|selected|$parent<br/>";
 		commands +="<h3>Maps</h3>";
@@ -637,7 +658,6 @@ var SpringyMap = {
 		commands +="<b>go to sleep|pause listening</b><br/> ";
 		commands +="<b>wake up|start listening</b><br/> ";
 		commands +="<b>stop listening</b><br/> ";
-		commands +="<b>render as map|text</b><br/> ";
 		
 		jQuery.fn.speechify.notify(commands,15000);
 	},
@@ -756,15 +776,43 @@ var SpringyMap = {
 		jQuery.fn.speechify.notify('Current map is <b>' +localStorage.getItem('springymap_active') + '</b>');
 	},
 	addSampleDataToGraph: function(graph) {
-		graph.addNodes('Dennis', 'Michael', 'Jessica', 'Timothy', 'Barbara')
+		graph.edges = [];
+			graph.nodes = [];
+			graph.nodeSet = {};
+			graph.setSelected(null);
+			SpringyMap.putMap();
+			renderer.graphChanged();
+		graph.addNodes('Springy Maps Speech Based Text/Mindmap Editor',
+			'You can say things like',
+				'go to sleep|wake up|stop listening|pause listening|start listening (or click the microphone)',
+				'what can i say',
+				'view as text, view as map, view as (virtual reality|vr)',
+				'add [note] [$content], rename [note] [$], select [$note], move [$note] [to $target|top|selected]',
+				'edit [$note] ->EDIT MODE: dictate, select, replace, undo, finish editing',
+				'new map [$map], save map [as] $map, open map [$map], delete map [$map]',
+			'Grammars make it easy to add flexible commands.',
+				'!! Grammars use optional[], grouping (), options | and variables $var.',
+			'Multistage voice commands (Wizards)',
+				'In most voice commands parameters are optional. You say "add note billing" OR  "add note" and the voice command will prompt for a title.',
+				'API - ask, requireVariable, confirm');
 
 		graph.addEdges(
-		  ['Dennis', 'Michael', {color: '#00A0B0', label: 'Foo bar'}],
-		  ['Michael', 'Dennis', {color: '#6A4A3C'}],
-		  ['Michael', 'Jessica', {color: '#CC333F'}],
-		  ['Jessica', 'Barbara', {color: '#EB6841'}],
-		  ['Michael', 'Timothy', {color: '#EDC951'}],
-		  ['Barbara', 'Timothy', {color: '#6A4A3C'}]
+			['You can say things like','Springy Maps Speech Based Text/Mindmap Editor',{}],
+			['Grammars make it easy to add flexible commands.','Springy Maps Speech Based Text/Mindmap Editor',{}],
+			['Multistage voice commands (Wizards)','Springy Maps Speech Based Text/Mindmap Editor',{}],
+			
+			['go to sleep|wake up|stop listening|pause listening|start listening (or click the microphone)','You can say things like',{}],
+			['what can i say','You can say things like',{}],
+			['view as text, view as map, view as (virtual reality|vr)','You can say things like',{}],
+			['add [note] [$content], rename [note] [$], select [$note], move [$note] [to $target|top|selected]','You can say things like',{}],
+			['edit [$note] ->EDIT MODE: dictate, select, replace, undo, finish editing','You can say things like',{}],
+			['new map [$map], save map [as] $map, open map [$map], delete map [$map]','You can say things like',{}],
+			
+			['!! Grammars use optional[], grouping (), options | and variables $var.','Grammars make it easy to add flexible commands.',{}],
+			
+			['In most voice commands parameters are optional. You say "add note billing" OR  "add note" and the voice command will prompt for a title.','Multistage voice commands (Wizards)',{}],
+			['API - ask, requireVariable, confirm','Multistage voice commands (Wizards)',{}]
+			
 		);
 	},
 	renderMapAs: function(type) {
@@ -789,8 +837,12 @@ var SpringyMap = {
 		}
 		return renderer;
 	},
-
 }
+
+
+
+
+
 // GRAMMAR - SENTENCE PATTERNS TO FUNCTION MAPPING
 var multiContent='{$c1 [$c2]}';// multiple tokens for variables
 SpringyMap.grammarTree = [
@@ -811,8 +863,10 @@ SpringyMap.grammarTree = [
 		[['new map [as] [$mapName]'],SpringyMap.newMap],
 		[['list|show [$trash'+ multiContent+'] maps'],SpringyMap.listMaps],
 		[['delete map [$mapName]'],SpringyMap.deleteMap],
-		[['clear [the] map'],SpringyMap.clearMap],
+		[['clear [the] map|mac'],SpringyMap.clearMap],
+		[['reset [the] map|mac [to default|sample]'],SpringyMap.resetMap],
 		[['what|which map|mac (is current|am i using)'],SpringyMap.whichMap],
 		[['render|view [map|mac] as $type{(tree|[mind] map|text)}'],SpringyMap.renderMapAs],
+		[['render|view [map|mac] as (virtual reality|vr)'],function() {jQuery.fn.speechify.notify('Sorry no VR yet.' );}],
 	];
 	
