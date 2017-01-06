@@ -531,9 +531,9 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				//if (speechRecognitionHandler != null) speechRecognitionHandler.stop();
 				// if we're already listening, just restart the speech handler
 				restartCount++;
-				if (recognising && restartCount > 3) {
+				if (recognising && restartCount > 10) {
 					pauseRecognising();
-				} else if (restartCount > 5) {
+				} else if (restartCount > 30) {
 					stopRecognising();
 				} else {
 					// kick the recognition

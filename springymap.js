@@ -637,6 +637,7 @@ var SpringyMap = {
 		commands +="<b>go to sleep|pause listening</b><br/> ";
 		commands +="<b>wake up|start listening</b><br/> ";
 		commands +="<b>stop listening</b><br/> ";
+		commands +="<b>render as map|text</b><br/> ";
 		
 		jQuery.fn.speechify.notify(commands,15000);
 	},
