@@ -78,6 +78,7 @@ var graph = null;
 // nodes, edges, nodeSet,
 // getSelected(), setSelected(n), addNode(node), newNode(data), addEdge(e), addEdges([e]) new Springy.Node(), new Springy.Edge, findNode(label), findNodes(label), detachNode, removeNode(n), findEdges(from,to), removeEdge(e)
 var renderer = null;
+var renderAs='map';
 //  graphChanged,
 var springy = null;
 var speechify = null;
@@ -87,12 +88,8 @@ $.fn.speechify.relPath='../';
 
 jQuery(function(){
 	graph = new Springy.Graph();
-	//springy = jQuery('#springydemo').springy({
-	//	graph: graph
-	//});
-	//renderer = springy.renderer;
-	renderer = new HtmlRenderer();
-	SpringyMap.getMap();	
+	renderer = SpringyMap.renderMapAs([1,{'$type':renderAs}]);
+	SpringyMap.getMap();
 	renderer.graphChanged();
 	
 	speechify = $("#speechcontrols").speechify({

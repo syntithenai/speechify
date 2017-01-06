@@ -81,25 +81,22 @@ jQuery.fn.springy = function(params) {
 	var dragged = null
 	
 	Springy.Renderer.prototype.setSelected = function(sel) {
-		console.log(['set selected',selected,sel]);
-		if (selected == null) {
-			selected ={node: null, point: null, distance: null};
-		}
-		selected.node = sel;
+		console.log(['set selected',graph.getSelected(),sel]);
+		graph.setSelected(sel);
 	}
 	Springy.Renderer.prototype.getSelected = function() {
 		console.log(['get selected',selected]);
-		if (selected != null) {
-			return selected;
-		}
-		return null;
+		return graph.getSelected();
+	}
+	Springy.Renderer.prototype.getSelectedObject = function() {
+		return {node: graph.getSelected(), point: null, distance: null};
 	}
 	
 	jQuery(canvas).mousedown(function(e) {
 		var pos = jQuery(this).offset();
 		var p = fromScreen({x: e.pageX - pos.left, y: e.pageY - pos.top});
 		selected = nearest = dragged = layout.nearest(p);
-
+		Springy.Renderer.setSelected(selected);
 		if (selected.node !== null) {
 			dragged.point.m = 10000.0;
 
@@ -116,6 +113,7 @@ jQuery.fn.springy = function(params) {
 		var pos = jQuery(this).offset();
 		var p = fromScreen({x: e.pageX - pos.left, y: e.pageY - pos.top});
 		selected = layout.nearest(p);
+		Springy.Renderer.setSelected(selected);
 		node = selected.node;
 		if (node && node.data && node.data.ondoubleclick) {
 			node.data.ondoubleclick();
@@ -326,7 +324,8 @@ jQuery.fn.springy = function(params) {
 			ctx.clearRect(s.x - boxWidth/2, s.y - boxHeight/2, boxWidth, boxHeight);
 
 			// fill background
-			if (selected !== null && selected.node !== null && selected.node.id === node.id) {
+			selected = this.getSelected();
+			if (selected !== null && selected.hasOwnProperty("id") && selected.id === node.id) {
 				//ctx.fillStyle = "#FFFFE0";
 				ctx.fillStyle = "red";
 			} else if (nearest !== null && nearest.node !== null && nearest.node.id === node.id) {

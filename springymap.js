@@ -131,6 +131,10 @@ var SpringyMap = {
 		renderer.graphChanged();
 	},
 	editNode: function(params) {
+		if (renderAs=='map') {
+			jQuery.fn.speechify.notify("Change mode with <b>render as text</b> to enable editing.");
+			return;
+		}
 		var variables = params[1];
 		speechify.requireVariable('$node','Which note do you want to edit ?',variables, 
 			function(value) {
@@ -761,7 +765,29 @@ var SpringyMap = {
 		  ['Michael', 'Timothy', {color: '#EDC951'}],
 		  ['Barbara', 'Timothy', {color: '#6A4A3C'}]
 		);
-	}
+	},
+	renderMapAs: function(type) {
+		renderAs = type[1]["$type"];
+		// map or default text
+		if (renderAs=='map' || renderAs=='mind map' || renderAs=='tree' ) {
+			jQuery.fn.speechify.notify('Rendering as mind map tree.' );
+			springy = jQuery('#springydemo').springy({
+				graph: graph
+			});
+			renderer = springy.renderer;
+			$("#springydemo").show();
+			$("#textrender").hide();
+			renderer.graphChanged();
+			
+		} else {
+			renderer = new HtmlRenderer();
+			$("#springydemo").hide();
+			$("#textrender").show();
+			renderer.graphChanged();
+			jQuery.fn.speechify.notify('Rendering as text.' );
+		}
+		return renderer;
+	},
 
 }
 // GRAMMAR - SENTENCE PATTERNS TO FUNCTION MAPPING
@@ -772,7 +798,7 @@ SpringyMap.grammarTree = [
 		[['select|choose|shoes|cheers|pick|pic nothing'],SpringyMap.selectNothing],
 		[['rename [$node'+ multiContent+'] [to $newName]' +multiContent],SpringyMap.renameNode],
 		[['delete [a] [note|node] [$node]'+ multiContent],SpringyMap.deleteNode],
-		[['reddit|edit [note|node] [$node]'+ multiContent],SpringyMap.editNode],
+		[['edith|reddit|edit [note|node] [$node]'+ multiContent],SpringyMap.editNode],
 		//[['join|connect $from'+ multiContent+' to|and $to'+ multiContent+' [as $connection'+ multiContent+']'],SpringyMap.joinNode],
 		//[['(disconnect|break|brake|remove connection) $from'+ multiContent+' to $to'+ multiContent+' [as $connection'+ multiContent+']'],SpringyMap.disconnectNode],
 		[['movenote|move [note|node] [$node'+ multiContent+'] [to $target]'+ multiContent],SpringyMap.moveNode],
@@ -785,6 +811,7 @@ SpringyMap.grammarTree = [
 		[['list|show [$trash'+ multiContent+'] maps'],SpringyMap.listMaps],
 		[['delete map [$mapName]'],SpringyMap.deleteMap],
 		[['clear [the] map'],SpringyMap.clearMap],
-		[['what|which map|mac (is current|am i using)'],SpringyMap.whichMap]
+		[['what|which map|mac (is current|am i using)'],SpringyMap.whichMap],
+		[['render|view [map|mac] as $type{(tree|[mind] map|text)}'],SpringyMap.renderMapAs],
 	];
 	
