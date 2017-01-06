@@ -1,5 +1,5 @@
 #speechify-status .microphone > img   {
-height:30px;
+height:40px;
 }
 #speechify-status .microphone > img {
 border-radius: 30px;
@@ -27,10 +27,12 @@ background-color:pink;
 	min-width: 300px;
 }
 
-
-#speechify-status .microphone-pause img {background-color:orange;border: 2px solid pink;}
-#speechify-status .microphone-on img {background-color:green; border: 2px solid blue;}
 #speechify-status .microphone-off img {background-color:red;border: 2px solid orange;}
+#speechify-status .microphone-starting img {background-color:pink;border: 2px solid pink;}
+#speechify-status .microphone-waiting img {background-color:hotpink; border: 2px solid lightgreen;}
+#speechify-status .microphone-on img {background-color:green; border: 2px solid blue;}
+#speechify-status .microphone-pause img {background-color:orange;border: 2px solid pink;}
+
 .speechify-selected {
 	border: 3px solid blue;
 	

@@ -34,11 +34,22 @@ speechify = $("body").speechify({
 
 ```
 
+This plugin init returns an object containing functions to interact with the speech recognition.
+These functions include
+
+- say(text) - speak the text aloud
+- notify(text,timeout) - Prepend text to the speech messages popup.
+- clearNotify() - Clear all notify messages.
+- ask(question,grammarTree,modal) - Notify add add overlay grammar tree
+- confirm(question,variables,successCallback);  - Notify a question and add overlay yes|no, calling success for yes
+- requireVariable(variableName,questionToAskIfEmpty,parametersFromParentCallback,successCallback,failCallback) - require that a variable is available from parent otherwise notify question and overlay grammar
+
 ### Working With Grammars
 
 A grammar is a collection of strings that map to a function.
 Grammars are all lower case.
 Grammars must not have extraneous internal white space as parsing tokenises words by space.
+Carelessly desiged grammars can eat memory to the extent of crashing chrome. :(
 
 Each active grammar should start with an audibly distinct keyword.
 

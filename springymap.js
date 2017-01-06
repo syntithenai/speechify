@@ -634,7 +634,7 @@ var SpringyMap = {
 		commands +="<b>wake up|start listening</b><br/> ";
 		commands +="<b>stop listening</b><br/> ";
 		
-		jQuery.fn.speechify.notify(commands);
+		jQuery.fn.speechify.notify(commands,15000);
 	},
 	openMap: 	function(params) {
 		var variables = params[1];

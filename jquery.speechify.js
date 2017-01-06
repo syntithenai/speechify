@@ -521,29 +521,19 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				handlerStarted = true;
 				recognising = true;	
 				activateRecognising();
-				// update and rebind microphone button
-				var status=$('#speechify-status');
-				if (status && status.length>0)  {
-				} else {
-					// create notify DOM
-					$(pluginDOM).append('<div id="speechify-status" ></div>');
-					$('#speechify-status').attr('style','position: fixed; top: 20px; right: 20px;');
-				}	
-				$('#speechify-status').html('<span class="microphone microphone-on"><img alt="on" src="'+$.fn.speechify.relPath+'images/microphone.png" ><span class="speechifymessages" ><div class="message" >Start/Stop/Pause Listening or click the microphone.</div><div class="message" >Try <b>what can I say</b></div></span></span>').show();
-				$('#speechify-status .microphone img').css('border','2px solid red');
-				$('#speechify-status').unbind('click.speechifystart').bind('click.speechifystart',function() {stopRecognising();});
+				//UIStarting();
 				// bind voice editing for text entries
 				bindTextEntries(pluginDOM);
 			}
 			
 			function activateRecognising() {
-				//console.log('activate',restartCount);
+				console.log('activate',restartCount);
 				//if (speechRecognitionHandler != null) speechRecognitionHandler.stop();
 				// if we're already listening, just restart the speech handler
 				restartCount++;
-				if (restartCount > 10) {
+				if (recognising && restartCount > 3) {
 					pauseRecognising();
-				} else if (restartCount > 15) {
+				} else if (restartCount > 5) {
 					stopRecognising();
 				} else {
 					// kick the recognition
@@ -563,28 +553,87 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				recognising = false;
 				handlerStarted = true;
 				activateRecognising();
-				// update UI
-				$('#speechify-status').html('<div class="microphone microphone-pause"><img alt="pause" src="'+$.fn.speechify.relPath+'images/microphonepause.png" /></div>');
-				$('#speechify-status').unbind('click.speechifystart').bind('click.speechifystart',function() {startRecognising();});
-				$('.voice-help').hide();
-					
+				UIPause();	
 				//}
 			}
 
 			function stopRecognising() {
-				console.log('CO');
+				console.log('STOP');
 				restartCount = 0;
 				methods.clearAllOverlays();
-				//if (recognising) {
-					recognising=false;
-					handlerStarted=false;
-					if (speechRecognitionHandler != null) speechRecognitionHandler.stop();
+				recognising=false;
+				handlerStarted=false;
+				if (speechRecognitionHandler != null) speechRecognitionHandler.stop();
+				UIStop();
+			}
+			
+			function UIInit() {
+				console.log('UIINIT');
+				// update and rebind microphone button
+				var status=$('#speechify-status');
+				if (status && status.length>0)  {
+				} else {
+					// create notify DOM
+					$(pluginDOM).append('<div id="speechify-status" ><span class="microphone" ><img src="'+$.fn.speechify.relPath+'images/microphonepause.png " /></span></div>');
+					$('#speechify-status').attr('style','position: fixed; top: 20px; right: 20px;');
+				}
+				UIStarting();
+			}
+			
+			function UIStarting() {
+				console.log('UIstarting');
+				$('#speechify-status .microphone').attr({'class':'microphone microphone-starting'});
+				
+				$('#speechify-status .microphone img').attr({'alt':'starting','src':$.fn.speechify.relPath+'images/microphonepause.png'});
+				$('#speechify-status').unbind('click.speechifystart');
+			}
+			
+			function UIWaiting() {
+				console.log('UIwaiting');
+				if ($('#speechify-status .microphone-on').length > 0)  {
+					$('#speechify-status .microphone').attr({'class':'microphone microphone-waiting'});
 					
-					// update and rebind microphone button
-					$('#speechify-status').html('<span class="microphone microphone-off"><img alt="off" src="'+$.fn.speechify.relPath+'images/microphonepause.png" ></span>');
+					$('#speechify-status .microphone img').attr({'alt':'waiting','src':$.fn.speechify.relPath+'images/microphonepause.png'});
+					$('#speechify-status').unbind('click.speechifystart');
+				}
+			}
+			
+			
+			function UIPause() {
+				// update UI
+				console.log('UIpaus');
+				
+				// update and rebind microphone button to display as paused
+				$('#speechify-status .microphone').attr({'class':'microphone microphone-pause'});
+				
+				$('#speechify-status .microphone img').attr({'alt':'pause','src':$.fn.speechify.relPath+'images/microphonepause.png'});
+				
+				$('#speechify-status').unbind('click.speechifystart').bind('click.speechifystart',function() {startRecognising();});
+			}
+
+			function UIStart() {
+				console.log('UIstart');
+				
+				$('#speechify-status .microphone').attr({'class':'microphone microphone-on'});
+				
+				$('#speechify-status .microphone img').attr({'alt':'on','src':$.fn.speechify.relPath+'images/microphone.png'});
+				$('#speechify-status .microphone img').css('border','2px solid red');
+				
+				if ($('#speechify-status .speechifymessages').length == 0) {
+				  // jQuery.fn.speechify.notify('Start/Stop/Pause Listening or click the microphone.</div><div class="message" >Try <b>what can I say</b>',0);
+				}	
+				$('#speechify-status').unbind('click.speechifystart').bind('click.speechifystart',function() {stopRecognising();});
+				
+			}
+			
+			function UIStop() {
+				console.log('UIstop');
+					// update and rebind microphone button to display as stopped
+					$('#speechify-status .microphone').attr({'class':'microphone microphone-off'});
+					$('#speechify-status .microphone img').attr({'alt' :'off','src':$.fn.speechify.relPath+'images/microphonepause.png'});
+					$('#speechify-status .speechifymessages').remove();
 					$('#speechify-status').unbind('click.speechifystart').bind('click.speechifystart',function() {startRecognising();});
-					$('.voice-help').hide();
-				//}
+				
 			}
 			
 			function joinThreeStrings(a,b,c) {
@@ -737,7 +786,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 								methods.clearOverlay();
 								jQuery.fn.speechify.notify('Cancelled.');
 							} else {
-								jQuery.fn.speechify.notify('<b>I could not understand you.</b> <br>' + question);
+								jQuery.fn.speechify.notify('<b>I could not understand you.</b> <br>' + question,0);
 							}
 						}
 					]
@@ -834,7 +883,9 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			addGrammars(grammars,activeGrammars);
 			//console.log(['GRAMMARS',grammars]);
 			console.log(['COLLATED',activeGrammars]);
-			
+			UIInit();
+			 jQuery.fn.speechify.notify('Start/Stop/Pause Listening or click the microphone.</div><div class="message" >Try <b>what can I say</b>',0);
+				
 			// PLUGIN INIT STARTS HERE
 			
 			try {
@@ -843,29 +894,40 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				speechRecognitionHandler.maxAlternatives = 5;
 				console.log(['init with handler',speechRecognitionHandler]);
 				
+				//UIStop();
 				
 				speechRecognitionHandler.onstart = function() {
-					//console.log('onstart');
+					console.log('onstart');
+					if (recognising) {
+						UIStarting();
+					}
 				}
 				speechRecognitionHandler.onend = function() {
-					//console.log('onend');
+					console.log('onend');
 				}
 				speechRecognitionHandler.onaudiostart = function() {
-					//console.log('audiostart');
-					$('#speechify-status .microphone img').css('border','2px solid green');
+					console.log('audiostart');
+					if (recognising) {	
+						UIStart();
+						$('#speechify-status .microphone img').css('border','2px solid green');
+					}
+					
 				}
 				speechRecognitionHandler.onaudioend = function() {
-					//console.log('audioend');
-					$('#speechify-status .microphone img').css('border','2px solid red');
+					console.log('audioend');
+					if (recognising) {
+						UIWaiting();
+						$('#speechify-status .microphone img').css('border','2px solid red');
+					}
 				}
 				
 				speechRecognitionHandler.onsoundstart = function() {$('#speechify-status .microphone img').css('border','2px solid blue');}
 				speechRecognitionHandler.onsoundend = function() {$('#speechify-status .microphone img').css('border','2px solid orange');}
 				speechRecognitionHandler.onspeechstart = function() {
-					//console.log('onspeechstart');
+					console.log('onspeechstart');
 				}
 				speechRecognitionHandler.onspeechend = function() {
-					//console.log('onspeechend');
+					console.log('onspeechend');
 				}
 				
 				speechRecognitionHandler.onresult = function(event){
@@ -993,30 +1055,31 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 
 	// duration 0 for persistent message
 	$.fn.speechify.notify=function(text,duration) {
+		if ($("#speechify-status .microphone .speechifymessages").length ==0)  {
+			$("#speechify-status .microphone").append("<div class='speechifymessages' ></div>");
+		}
+		
 		console.log(['notify',duration,text]);
 		var newMessage=$('<span class="message" >' + text + '</span>');
-		duration = duration!==undefined ? duration : 15000;
+		duration = Boolean(duration) ? parseInt(duration) : 5000;
 		$("#speechify-status .microphone .speechifymessages").html(newMessage);
 		$("#speechify-status .microphone .speechifymessages").show();
 		if (duration > 0) {
 			setTimeout(function() {
 				newMessage.hide('slow');
-				if ($("#speechify-status .microphone .speechifymessages .message").length == 0) {
-					$("#speechify-status .microphone .speechifymessages").hide('slow');
+				newMessage.remove();
+				if ($("#speechify-status .microphone .speechifymessages .message").length==0) {
+					$("#speechify-status .microphone .speechifymessages").remove();
 				}
 			},duration);
 		}
 	};
-	$.fn.speechify.disclearNotify=function() {
-		$("#speechify-status .microphone .speechifymessages").hide();
-		$("#speechify-status .microphone .speechifymessages").html('');
-	};
 	
 	$.fn.speechify.grammarLibrary = {
-		'color' : '(Alice Blue|Antique White|Aqua|Aquamarine|Azure|Beige|Bisque|Black|Blanched Almond|Blue|Blue Violet|Brown|Burly Wood|Cadet Blue|Chartreuse|Chocolate|Coral|Cornflower Blue|Corn silk|Crimson|Cyan|Dark Blue|Dark Cyan|Dark GoldenRod|Dark Gray|Dark Grey|Dark Green|Dark Khaki|Dark Magenta|Dark Olive Green|Dark Orange|Dark Orchid|Dark Red|Dark Salmon|Dark Sea Green|Dark Slate Blue|Dark Slate Gray|Dark Slate Grey|Dark Turquoise|Dark Violet|Deep Pink|Deep Sky Blue|Dim Gray|Dim Grey|Dodger Blue|Fire Brick|Floral White|Forest Green|Fuchsia|Gainsboro|GhostWhite|Gold|GoldenRod|Gray|Grey|Green|Green Yellow|Honey Dew|Hot Pink|Indian Red|Indigo|Ivory|Khaki|Lavender|Lavender Blush|Lawn Green|Lemon Chiffon|Light Blue|Light Coral|Light Cyan|Light GoldenRod Yellow|Light Gray|Light Grey|Light Green|Light Pink|Light Salmon|Light Sea Green|Light Sky Blue|Light Slate Gray|Light Slate Grey|Light Steel Blue|Light Yellow|Lime|Lime Green|Linen|Magenta|Maroon|Medium Aqua Marine|Medium Blue|Medium Orchid|Medium Purple|Medium Sea Green|Medium Slate Blue|Medium Spring Green|Medium Turquoise|Medium Violet Red|Midnight Blue|Mint Cream|Misty Rose|Moccasin|Navajo White|Navy|Old Lace|Olive|Olive Drab|Orange|Orange Red|Orchid|Pale Golden Rod|Pale Green|Pale Turquoise|Pale Violet Red|Papaya Whip|Peach Puff|Peru|Pink|Plum|Powder Blue|Purple|Rebecca Purple|Red|Rosy Brown|Royal Blue|Saddle Brown|Salmon|Sandy Brown|Sea Green|Sea Shell|Sienna|Silver|Sky Blue|Slate Blue|Slate Gray|Slate Grey|Snow|Spring Green|Steel Blue|Tan|Teal|Thistle|Tomato|Turquoise|Violet|Wheat|White|White Smoke|Yellow|Yellow Green)',
+		'color' : '(Alice Blue|Antique White|Aqua|Aquamarine|Azure|Beige|Bisque|Black|Blanched Almond|Blue|Blue Violet|Brown|Burly Wood|Cadet Blue|Chartreuse|Chocolate|Coral|Cornflower Blue|Corn silk|Crimson|Cyan|Dark Blue|Dark Cyan|Dark Golden Rod|Dark Gray|Dark Grey|Dark Green|Dark Khaki|Dark Magenta|Dark Olive Green|Dark Orange|Dark Orchid|Dark Red|Dark Salmon|Dark Sea Green|Dark Slate Blue|Dark Slate Gray|Dark Slate Grey|Dark Turquoise|Dark Violet|Deep Pink|Deep Sky Blue|Dim Gray|Dim Grey|Dodger Blue|Fire Brick|Floral White|Forest Green|Fuchsia|Gainsboro|GhostWhite|Gold|Golden Rod|Gray|Grey|Green|Green Yellow|Honey Dew|Hot Pink|Indian Red|Indigo|Ivory|Khaki|Lavender|Lavender Blush|Lawn Green|Lemon Chiffon|Light Blue|Light Coral|Light Cyan|Light GoldenRod Yellow|Light Gray|Light Grey|Light Green|Light Pink|Light Salmon|Light Sea Green|Light Sky Blue|Light Slate Gray|Light Slate Grey|Light Steel Blue|Light Yellow|Lime|Lime Green|Linen|Magenta|Maroon|Medium Aqua Marine|Medium Blue|Medium Orchid|Medium Purple|Medium Sea Green|Medium Slate Blue|Medium Spring Green|Medium Turquoise|Medium Violet Red|Midnight Blue|Mint Cream|Misty Rose|Moccasin|Navajo White|Navy|Old Lace|Olive|Olive Drab|Orange|Orange Red|Orchid|Pale Golden Rod|Pale Green|Pale Turquoise|Pale Violet Red|Papaya Whip|Peach Puff|Peru|Pink|Plum|Powder Blue|Purple|Rebecca Purple|Red|Rosy Brown|Royal Blue|Saddle Brown|Salmon|Sandy Brown|Sea Green|Sea Shell|Sienna|Silver|Sky Blue|Slate Blue|Slate Gray|Slate Grey|Snow|Spring Green|Steel Blue|Tan|Teal|Thistle|Tomato|Turquoise|Violet|Wheat|White|White Smoke|Yellow|Yellow Green)',
 		
 		'number' : '(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)',
-		
+		// TODO
 		'date' : '[$time{$TODO} am|pm] [$day] [$month{()}] [$year]'
 		
 	}
