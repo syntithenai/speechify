@@ -1,0 +1,61 @@
+#textrender {
+	dbackground-color: lightgrey;
+}
+#textrender label {
+	font-weight: bold;
+	margin-left: 0em;
+	font-size:1.5em;
+}
+#textrender .node {
+	margin-top:0.5em;
+	padding-bottom:1em;
+}
+#textrender .node .node {
+	margin-left: 0.5em;
+}
+#textrender .node .node label{
+	font-size:1.4em;
+}
+#textrender .node .node .node label{
+	font-size:1.3em;
+}
+#textrender .node .node .node .node label {
+	font-size:1.2em;
+}
+#textrender .node .node .node .node .node label {
+	font-size:1.1em;
+}
+#textrender .node .node .node .node .node  label{
+	font-size:1.0em;
+}
+#textrender .node .node .node .node .node label {
+	font-size:0.9em;
+}
+
+
+#stextrender .node .node .node {
+	margin-left: 1em;
+}
+#stextrender .node .node .node .node  {
+	margin-left: 1.5em;
+}
+#stextrender .node .node .node .node .node  {
+	margin-left: 2em;
+}
+#stextrender .node .node .node .node .node  {
+	margin-left: 2.5em;
+}
+
+#textrender  .selectednode  {
+	background-color: red !important;
+}
+#textrender  .editingnode > div.content {
+	border: 2px solid blue !important;
+}
+.selectedtext {
+	font-weight: bold;	
+	background-color: lightblue;
+	margin:0.1em;
+	border-radius: 20px;
+}
+

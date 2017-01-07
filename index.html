@@ -1,76 +1,21 @@
 <script src="jquery.js" type="text/javascript"></script>
-<script src="jquery.speechify.js" type="text/javascript"></script><link rel="stylesheet" href="jquery.speechify.css" type="text/css" media="all" />
+<script src="jquery.speechify.js" type="text/javascript"></script>
+<link rel="stylesheet" href="jquery.speechify.css" type="text/css" media="all" />
 <script src="springy.js"></script><script src="springyui.js"></script>
 <script src="springymap.js"></script>
+<link rel="stylesheet" href="springymap.css" type="text/css" media="all" />
 <script src="springymap.htmlrenderer.js"></script>
-<style>
-#textrender {
-	dbackground-color: lightgrey;
-}
-#textrender label {
-	font-weight: bold;
-	margin-left: 0em;
-	font-size:1.5em;
-}
-#textrender .node {
-	margin-top:0.5em;
-	padding-bottom:1em;
-}
-#textrender .node .node {
-	margin-left: 0.5em;
-}
-#textrender .node .node label{
-	font-size:1.4em;
-}
-#textrender .node .node .node label{
-	font-size:1.3em;
-}
-#textrender .node .node .node .node label {
-	font-size:1.2em;
-}
-#textrender .node .node .node .node .node label {
-	font-size:1.1em;
-}
-#textrender .node .node .node .node .node  label{
-	font-size:1.0em;
-}
-#textrender .node .node .node .node .node label {
-	font-size:0.9em;
-}
-
-
-#stextrender .node .node .node {
-	margin-left: 1em;
-}
-#stextrender .node .node .node .node  {
-	margin-left: 1.5em;
-}
-#stextrender .node .node .node .node .node  {
-	margin-left: 2em;
-}
-#stextrender .node .node .node .node .node  {
-	margin-left: 2.5em;
-}
-
-#textrender  .selectednode  {
-	background-color: red !important;
-}
-#textrender  .editingnode > div.content {
-	border: 2px solid blue !important;
-}
-.selectedtext {
-	font-weight: bold;	
-	background-color: lightblue;
-	margin:0.1em;
-	border-radius: 20px;
-}
-
-</style>
+<script src="springymap.aframerenderer.js"></script>
+<script src="aframe.min.js"></script>
+<script src="aframe-bmfont-text-component.min.js" ></script>
 <body>
 <div id="speechcontrols" ></div>
-
-<div id="textrender" ></div>
-<canvas id="springydemo" width="800" height="600" ></canvas>
+<div id="vrrender" style="display: none;" >
+<a-scene inspector="url: https://aframe.io/aframe-inspector/dist/aframe-inspector.min.js" >
+</a-scene>
+</div>
+<div id="textrender" style="display: none;" ></div>
+<canvas id="springydemo" width="800" height="600" style="display: none;"  ></canvas>
 
 <script>
 // exposed for development, move inside jquery block for prod--
@@ -78,7 +23,7 @@ var graph = null;
 // nodes, edges, nodeSet,
 // getSelected(), setSelected(n), addNode(node), newNode(data), addEdge(e), addEdges([e]) new Springy.Node(), new Springy.Edge, findNode(label), findNodes(label), detachNode, removeNode(n), findEdges(from,to), removeEdge(e)
 var renderer = null;
-var renderAs='text';
+var renderAs='vr';
 //  graphChanged,
 var springy = null;
 var speechify = null;
@@ -96,14 +41,38 @@ jQuery(function(){
 		'grammarTree' : SpringyMap.grammarTree,
 	});
 	// click select bind body filter to labels with parent div.node
+	var editedNode = null;
 	$('body').bind('click',function(e) {
+		console.log(['CLICK',$(e.target).parent(),$(e.target)]);
 		var nodeDiv = $(e.target).parent();
 		if (nodeDiv.hasClass('node')) {
-			graph.setSelected(graph.nodeSet[$(nodeDiv).attr('id')]);
-			renderer.graphChanged();
-			e.stopImmediatePropagation();
-		} else {
+			console.log(['ISNODE',graph.getSelected()]);
+			if (graph.getSelected() != null && graph.getSelected().id ==$(nodeDiv).attr('id') ) {
+				console.log(['STARTEDIT']);
+				// start editing
+				$(e.target).attr('contenteditable',true);
+				$(e.target).bind('blur',function() {
+					$(this).attr('contenteditable',false);
+					if ($(e.target).hasClass('content')) {
+						console.log(['BLURANDSAVE content']);
+						graph.nodeSet[$(nodeDiv).attr('id')].data.content = $(this).html();
+					} else {
+						console.log(['BLURANDSAVE label']);
+						graph.nodeSet[$(nodeDiv).attr('id')].data.l = $(this).html();
+					}
+					SpringyMap.putMap();
+					renderer.graphChanged();
+					
+				});				
+			} else {
+				graph.setSelected(graph.nodeSet[$(nodeDiv).attr('id')]);
+				SpringyMap.putMap();
+				renderer.graphChanged();
+				e.stopImmediatePropagation();
+			}
+		}  else {
 			graph.setSelected(null);
+			SpringyMap.putMap();
 			renderer.graphChanged();
 			e.stopImmediatePropagation();
 		}

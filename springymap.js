@@ -29,9 +29,9 @@ var SpringyMap = {
 			storeKey =  localStorage.getItem("springymap_active");
 		} 
 		var storedGraph = JSON.parse(localStorage.getItem(storeKey));
-		console.log(['STORE',storeKey,storedGraph]);
+		//console.log(['STORE',storeKey,storedGraph]);
 		if (storedGraph != null) 	{
-			console.log(['LOADFROMSTORAGE',storedGraph]);
+			//console.log(['LOADFROMSTORAGE',storedGraph]);
 			graph.edges = [];
 			graph.nodes = [];
 			graph.nodeSet = {};
@@ -57,9 +57,9 @@ var SpringyMap = {
 	},
 	setData: function (data) {
 		var storedGraph = JSON.parse(data);
-		console.log(['STORE',storedGraph]);
+		//console.log(['STORE',storedGraph]);
 		if (storedGraph != null) 	{
-			console.log(['LOADFROMSTORAGE',storedGraph]);
+			//console.log(['LOADFROMSTORAGE',storedGraph]);
 			graph.edges = [];
 			graph.nodes = [];
 			graph.nodeSet = {};
@@ -109,7 +109,7 @@ var SpringyMap = {
 						var chosen = parameters[1]['$number'].replace("number ","");
 						//console.log(['CHOSEN',chosen]);
 						chosen = parseInt(chosen.replace("one","1").replace("two","2").replace("three","3").replace("four","4").replace("five","5").replace("six","6").replace("seven","7").replace("eight","8").replace("nine","9"));
-						console.log(['CHOSEN',chosen, typeof chosen]);
+						//console.log(['CHOSEN',chosen, typeof chosen]);
 						if (typeof chosen == "number" && !isNaN(chosen) ) {
 							if (chosen > 0 && b[chosen-1] != null) {
 								graph.setSelected(b[chosen-1]);
@@ -117,7 +117,7 @@ var SpringyMap = {
 								jQuery.fn.speechify.notify('Select note <b>' + value + ' number ' +chosen+ ' of '+b.length+' </b>? <b>Yes</b>, <b>No</b> or <b>Try another number</b>' ,0);
 							} else {
 								jQuery.fn.speechify.notify('Could not select note <b>' + value + ' number ' +chosen+ ' of '+b.length+' </b> <b>Try another number</b>' );
-								console.log(b);
+								//console.log(b);
 							}
 						} else {
 							jQuery.fn.speechify.notify('Could not recognise a number. There are '+b.length+' matching notes. Say a number to choose between them.');
@@ -220,10 +220,10 @@ var SpringyMap = {
 						}
 						],
 						[['select [text] [$content]'],function(parameters) {
-							console.log(['select text',parameters[1]]);
+							//console.log(['select text',parameters[1]]);
 							speechify.requireVariable('$content','What text do you want to select ?',parameters[1], 
 								function(value) {
-									console.log(['selected text callback',value]);
+									//console.log(['selected text callback',value]);
 									if (value =="all" || value =="everything") {
 										resetSelection();
 										setSelection($('<b>'+(Boolean(node.data.content) ? node.data.content : '')+'</b>').text(),0);
@@ -235,15 +235,64 @@ var SpringyMap = {
 										jQuery.fn.speechify.notify('Selected nothing.');
 									} else if (node.data.content != null)  {
 										// clear the span.selectedtext tags
-										node.data.content = $('<b>'+(Boolean(node.data.content) ? node.data.content : '')+'</b>').text();
-							
-										var posn = node.data.content.indexOf(value);
-										if (setSelection(value,posn)) {
-											renderer.graphChanged();
-											SpringyMap.putMap();
-											jQuery.fn.speechify.notify('Selected text '+value);
+										//node.data.content = $('<b>'+(Boolean(node.data.content) ? node.data.content : '')+'</b>').text();
+										resetSelection();
+										var splits = node.data.content.trim().split(value);
+										//console.log(['SPLITS',node.data.content.trim(),node.data.content,value,splits]);
+										if (splits.length > 2) {
+											speechify.ask('There are '+(splits.length -1)+' matches. Say a number to choose between them.',[
+											[['[number] $number'],function(parameters) {
+												// convert to int
+												var chosen = parameters[1]['$number'].replace("number ","");
+												//console.log(['CHOSEN',chosen]);
+												chosen = parseInt(chosen.replace("one","1").replace("two","2").replace("three","3").replace("four","4").replace("five","5").replace("six","6").replace("seven","7").replace("eight","8").replace("nine","9"));
+												//console.log(['CHOSEN',chosen, typeof chosen]);
+												if (typeof chosen == "number" && !isNaN(chosen) ) {
+													if (chosen > 0 && splits[chosen] != null) {
+														// slice all previous splits and rejoin on value to find start offset
+														
+														var before = splits.slice(0,chosen).join(value);
+														var posn = before.length +1 ;
+														//console.log(['BEFORE',before,posn]);
+														resetSelection();
+														if (setSelection(value,posn)) {
+															renderer.graphChanged();
+															SpringyMap.putMap();
+															jQuery.fn.speechify.notify('Selected text '+value);
+														} else {
+															jQuery.fn.speechify.notify('Could not find text '+value);
+														}
+														
+														renderer.graphChanged();
+														jQuery.fn.speechify.notify('Select text fragment <b>' +chosen+ ' of '+(splits.length -1)+' </b>? <b>Yes</b>, <b>No</b> or <b>Try another number</b>' ,0);
+													} else {
+														jQuery.fn.speechify.notify('Could not select text fragment'+chosen+ ' of '+(splits.length -1)+' </b> <b>Try another number</b>' );
+													//	console.log(b);
+													}
+												} else {
+													jQuery.fn.speechify.notify('Could not recognise a number. There are '+(splits.length -1)+' matches. Say a number to choose between them.');
+												}
+											}],
+											[['cancel','no'],function() {
+												speechify.clearOverlay();
+												resetSelection();
+												renderer.graphChanged();
+												jQuery.fn.speechify.notify('Cancelled selection.');
+											}],
+											[['ok|okay', 'yes'],function() {
+												speechify.clearOverlay();
+												jQuery.fn.speechify.notify('Selected.');
+											}],
+											]);
 										} else {
-											jQuery.fn.speechify.notify('Could not find text '+value);
+											var posn = node.data.content.indexOf(value);
+											if (setSelection(value,posn)) {
+												renderer.graphChanged();
+												SpringyMap.putMap();
+												jQuery.fn.speechify.notify('Selected text '+value);
+											} else {
+												jQuery.fn.speechify.notify('Could not find text '+value);
+											}
 										}
 									} else {
 										jQuery.fn.speechify.notify('Could not select in empty content.');
@@ -276,7 +325,7 @@ var SpringyMap = {
 						}],
 						[['delete that|selected'],function() {
 							if (selectedText.trim().length > 0) {
-								console.log([selectedTextBefore ,selectedTextAfter]);
+								//console.log([selectedTextBefore ,selectedTextAfter]);
 								speechify.confirm('Really delete text <b>'+ selectedText +'</b> ?<br/><b>Yes</b> or <b>No</b>',function() {
 									previousText = $('<b>'+node.data.content+'</b>').text();
 									var tmp = selectedTextBefore + ' ' + selectedTextAfter;
@@ -292,13 +341,29 @@ var SpringyMap = {
 						}],
 						[['full stop','.'],function() {
 							previousText = $('<b>'+node.data.content+'</b>').text();
+							if (selectedText.length > 0) {
+								node.data.content = selectedTextBefore + ' ' +selectedText +'. '+selectedTextAfter; 
+							} else {
+								if (node.data.content.trim().substr(-1,1) != '.') {
+									node.data.content = node.data.content.trim() + '.';
+								}
+							}
+							SpringyMap.putMap();
 							renderer.graphChanged();
-							jQuery.fn.speechify.notify('TODO fullstop.');
+							jQuery.fn.speechify.notify('Added fullstop.');
 						}],
-						[['comma','.'],function() {
+						[['comma',','],function() {
 							previousText = $('<b>'+node.data.content+'</b>').text();
+							if (selectedText.length > 0) {
+								node.data.content = selectedTextBefore + ' ' +selectedText +', '+selectedTextAfter; 
+							} else {
+								if (node.data.content.trim().substr(-1,1) != '.') {
+									node.data.content = node.data.content.trim() + ',';
+								}
+							}
+							SpringyMap.putMap();
 							renderer.graphChanged();
-							jQuery.fn.speechify.notify('TODO comma.');
+							jQuery.fn.speechify.notify('Added comma.');
 						}],
 						
 						[['$content'],function(parameters) {
@@ -345,7 +410,7 @@ var SpringyMap = {
 					speechify.requireVariable('$newName','What do you want to rename the note to ?',variables, 
 						function(value2) {
 							speechify.confirm("Rename <b>"+node.data.label+"</b> to <b>"+value2+"</b>? <b>Yes</b> or <b>No</b>",function() {
-								console.log(['REALLY RENAME',value,value2,node,variables]);
+								//console.log(['REALLY RENAME',value,value2,node,variables]);
 								
 								node.data.label = value2;
 								jQuery.fn.speechify.notify("Renamed <b>"+value+"</b> to <b>"+value2+"</b>.");
@@ -786,7 +851,7 @@ var SpringyMap = {
 			'You can say things like',
 				'go to sleep|wake up|stop listening|pause listening|start listening (or click the microphone)',
 				'what can i say',
-				'view as text, view as map, view as (virtual reality|vr)',
+				'view as text, view as map, view as virtual reality',
 				'add [note] [$content], rename [note] [$], select [$note], move [$note] [to $target|top|selected]',
 				'edit [$note] ->EDIT MODE: dictate, select, replace, undo, finish editing',
 				'new map [$map], save map [as] $map, open map [$map], delete map [$map]',
@@ -825,12 +890,21 @@ var SpringyMap = {
 			});
 			renderer = springy.renderer;
 			$("#springydemo").show();
+			$("#vrrender").hide();
 			$("#textrender").hide();
 			renderer.graphChanged();
 			
+		} else if (renderAs=='vr' || renderAs=='virtual reality' ) {
+			renderer = new AFrameRenderer();
+			$("#springydemo").hide();
+			$("#vrrender").show();
+			$("#textrender").hide();
+			renderer.graphChanged();
+			jQuery.fn.speechify.notify('Rendering as virtual reality.' );
 		} else {
 			renderer = new HtmlRenderer();
 			$("#springydemo").hide();
+			$("#vrrender").hide();
 			$("#textrender").show();
 			renderer.graphChanged();
 			jQuery.fn.speechify.notify('Rendering as text.' );
@@ -866,7 +940,6 @@ SpringyMap.grammarTree = [
 		[['clear [the] map|mac'],SpringyMap.clearMap],
 		[['reset [the] map|mac [to default|sample]'],SpringyMap.resetMap],
 		[['what|which map|mac (is current|am i using)'],SpringyMap.whichMap],
-		[['render|view [map|mac] as $type{(tree|[mind] map|text)}'],SpringyMap.renderMapAs],
-		[['render|view [map|mac] as (virtual reality|vr)'],function() {jQuery.fn.speechify.notify('Sorry no VR yet.' );}],
+		[['render|view [map|mac] as $type{(tree|[mind] map|text|virtual reality)}'],SpringyMap.renderMapAs],
 	];
 	

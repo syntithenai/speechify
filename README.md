@@ -9,6 +9,8 @@ https://github.com/syntithenai/speechify
 ## Overview 
 Speechify.js is a jquery plugin that leverages the voice recognition capabilities of Google Chrome to implement voice commands and transcription.
 
+It is inspired by the possibilities of using [https://aframe.io/](AFrame HTML virtual reality components) with speech commands and the demo features a rendering option using AFrame.
+
 The plugin provides a button and an associated message display which shows the status of voice recognition, click to start/stop listening and feedback about the success or progress of voice commands.
 
 The plugin binds the focus event on inputs, textareas and contenteditables to start and stop voice transcription.
@@ -147,17 +149,20 @@ These functions can be nested to create multi step dialogs.
 }
 ```
 
-
-
-
-## technical
-
-The plugin init method returns an object of functions including -
-
-		
 ## TODO
 
-? full list of possibile or close matches ? for which the recognised text is incomplete
+- Partial matches - full list of possibile or close matches ? for which the recognised text is incomplete
+- Clarify single token variable rules.
+- text editing grammar applied to inputs, text areas and content editables
+- improve number and date handling
+- expand VR
+	- tracked controllers for selection
+	- widescreen split map AND text views for 3D
+
+- read to me. kids learn to read app
+- tour guide - engaging speech driven tour guide
+
+- ??
 		
 				
 ## links
