@@ -90,6 +90,41 @@ var HtmlRenderer = function() {
 			//else {
 			//	console.log('nokids');
 			//}
+			$('body').unbind('click').bind('click',function(e) {
+				console.log(['CLICK',$(e.target).parent(),$(e.target)]);
+				var nodeDiv = $(e.target).parent();
+				if (nodeDiv.hasClass('node')) {
+					console.log(['ISNODE',graph.getSelected()]);
+					if (graph.getSelected() != null && graph.getSelected().id ==$(nodeDiv).attr('id') ) {
+						console.log(['STARTEDIT']);
+						// start editing
+						$(e.target).attr('contenteditable',true);
+						$(e.target).bind('blur',function() {
+							$(this).attr('contenteditable',false);
+							if ($(e.target).hasClass('content')) {
+								console.log(['BLURANDSAVE content']);
+								graph.nodeSet[$(nodeDiv).attr('id')].data.content = $(this).html();
+							} else {
+								console.log(['BLURANDSAVE label']);
+								graph.nodeSet[$(nodeDiv).attr('id')].data.l = $(this).html();
+							}
+							SpringyMap.putMap();
+							renderer.graphChanged();
+							
+						});				
+					} else {
+						graph.setSelected(graph.nodeSet[$(nodeDiv).attr('id')]);
+						SpringyMap.putMap();
+						renderer.graphChanged();
+						e.stopImmediatePropagation();
+					}
+				}  else {
+					graph.setSelected(null);
+					SpringyMap.putMap();
+					renderer.graphChanged();
+					e.stopImmediatePropagation();
+				}
+			});
 			return content;
 		}
 	};

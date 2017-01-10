@@ -493,7 +493,10 @@ var SpringyMap = {
 		speechify.requireVariable('top|selected|$target','Where do you want to move the note <b>'+node.data.label+'</b> to ?<br/><b>top</b>, <b>selected</b> or the name of a note.',variables, 
 			function(value) {
 				if (value == 'top' ) {
-					
+					graph.detachNode(node);
+					jQuery.fn.speechify.notify('Moved note <b>' + node.data.label + '</b> to the top of the tree.' );
+					SpringyMap.putMap();
+					renderer.graphChanged();
 				} else if (value == 'selected node' || value == 'selected note' || value == 'selected') {
 					var s = oldSelected;
 					//console.log(['start DONE remove selected',s]);
@@ -884,6 +887,8 @@ var SpringyMap = {
 		renderAs = type[1]["$type"];
 		// map or default text
 		if (renderAs=='map' || renderAs=='mind map' || renderAs=='tree' ) {
+			$('body').unbind('click')
+			
 			jQuery.fn.speechify.notify('Rendering as mind map tree.' );
 			springy = jQuery('#springydemo').springy({
 				graph: graph
@@ -895,12 +900,14 @@ var SpringyMap = {
 			renderer.graphChanged();
 			
 		} else if (renderAs=='vr' || renderAs=='virtual reality' ) {
+			$('body').unbind('click')
+			
 			renderer = new AFrameRenderer();
 			$("#springydemo").hide();
 			$("#vrrender").show();
 			$("#textrender").hide();
 			renderer.graphChanged();
-			jQuery.fn.speechify.notify('Rendering as virtual reality.' );
+			//jQuery.fn.speechify.notify('Rendering as virtual reality.' );
 		} else {
 			renderer = new HtmlRenderer();
 			$("#springydemo").hide();
@@ -940,6 +947,6 @@ SpringyMap.grammarTree = [
 		[['clear [the] map|mac'],SpringyMap.clearMap],
 		[['reset [the] map|mac [to default|sample]'],SpringyMap.resetMap],
 		[['what|which map|mac (is current|am i using)'],SpringyMap.whichMap],
-		[['render|view [map|mac] as $type{(tree|[mind] map|text|virtual reality)}'],SpringyMap.renderMapAs],
+		[['renderers $type{text}','render|view [map|mac] as $type{(tree|[mind] map|text|virtual reality)}'],SpringyMap.renderMapAs],
 	];
 	

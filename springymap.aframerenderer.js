@@ -1,101 +1,148 @@
 
 var AFrameRenderer = function() {
+	var charMaxWidth = 120;
+	var maxWidth = charMaxWidth * 25;
 	
-	function isEditing(node) {
-		var edited = graph.getEdited();
-		//console.log(['CHECK EDITING',node,edited]);
-		if (node!=null && node.hasOwnProperty('id') && edited!=null && edited.hasOwnProperty('id') && node.id == edited.id) {
-			//console.log(['CHECK EDITING match']);
-			return true;
-		} else {
-			return false;
+	function splitter(str, l){
+		var strs = [];
+		while(str.length > l){
+			var pos = str.substring(0, l).lastIndexOf(' ');
+			pos = pos <= 0 ? l : pos;
+			strs.push(str.substring(0, pos));
+			var i = str.indexOf(' ', pos)+1;
+			if(i < pos || i > pos+l)
+				i = pos;
+			str = str.substring(i);
 		}
+		strs.push(str);
+		return strs;
 	}
-	
+
 	var methods = {
 		graphChanged: function() {
-			console.log('g changed');
+			console.log('RENDER VR');
+			var lineHeight = 0.2;
+			
 			var content='';
+			var contentArray=[];
 			var rootNodes=[];
 			var collatedByParent={};
+			
 			// find root nodes and collate all nodes by parent
 			for (var i=0; i < graph.nodes.length; i++) {
 				var node = graph.nodes[i];
-				//console.log(['index node',node.id,node.data.label,graph.adjacency[node.id]?graph.adjacency[node.id]:'',graph.adjacency]);
 				// do i have a parent
 				if (graph.adjacency.hasOwnProperty(node.id)) {
 					for ( var j in graph.adjacency[node.id]) {
 						var parent = graph.adjacency[node.id][j];
-						if (typeof collatedByParent[j] != 'object' ) {
-							collatedByParent[j]=[];
-						}
+						if (typeof collatedByParent[j] != 'object' ) {collatedByParent[j]=[];}
 						collatedByParent[j].push(node.id);
-					//	console.log(['j',j]);
 					}
+				} else { 
+					rootNodes.push(node.id); 
+				}
+			}
+			$('a-entity.root').remove(); 
 					
-				} else {
-					//console.log('root');
-					rootNodes.push(node.id);
-				}
-			}
 			//console.log(['root nodes ',rootNodes,'collated',collatedByParent]);
-			// render rootnodes and then recursively
+
+			// render rootnodes and then render recursively into an array 
+			var depth = 0;
+				
 			for (var i=0; i < rootNodes.length; i++) {
-				var depth = 0;
+				depth = 0;
 				var node = graph.nodeSet[rootNodes[i]];
-				var selectedText='';
-				var selectedTextN='';
+				var nodeLabel = $('<b>'+node.data.label+'</b>').text();
+				var nodeContent = $('<b>'+(Boolean(node.data.content) ? node.data.content : '')+'</b>').text();
+				var nodeColor='black';
 				var thisSelection = graph.getSelected();
-				//console.log(['SL',thisSelection]);
 				if (thisSelection != null && thisSelection.id == node.id) {
-					selectedText = ' class="selectednode" ';
+						nodeColor = 'red';
 				}
-				if (isEditing(node)) {
-					selectedTextN = ' editingnode';
+				var contentColor='blue';
+				var thisEdited = graph.getEdited();
+				if (thisEdited != null && thisEdited.id == node.id) {
+					contentColor = 'green';
+					nodeColor = 'green';
+				}					
+				contentArray.push([0, '<a-entity id="'+node.id+'"  ',' class="rootnode node" bmfont-text="width: '+maxWidth+'; text: '+ nodeLabel+'; color: '+nodeColor+'; width: 5000;" ></a-entity>']);
+				if (nodeContent.length > 0) {
+					var textSplits = splitter(nodeContent,charMaxWidth);
+					for (textSplit in textSplits) {
+						contentArray.push([0, '<a-entity id="'+node.id+'-content-'+textSplit+'"  ',' class="content content-node-'+node.id+'" bmfont-text="width: '+maxWidth+'; text: '+ textSplits[textSplit] +'; color: '+contentColor+'" ></a-entity>']);
+					}
 				}
-				//<a-entity bmfont-text="text: HELLO!; color: #333" position="0 0 -5"></a-entity>
-				
-				content += '<a-entity id="'+node.id+'" class="rootnode node' + selectedTextN + '" bmfont-text="text: '+ node.data.label+'; color: #333" ><a-entity class="content" bmfont-text="text: '+ (Boolean(node.data.content) ? node.data.content : '') +'; color: #333"></a-entity>';
-				
 				// children of this node recursively
-				content += methods.renderChildNodes(node,depth,collatedByParent);
-				content += "</a-entity>\n";
+				//var result = ['',0]; 
+				//console.log(['b1',contentArray]);
+				var kids = methods.renderChildNodes(node,depth,collatedByParent);
+				for (kid in kids) {
+					contentArray.push(kids[kid]);
+				}
+				//console.log(['after1',kids,contentArray]);
+				
 			}
-			$('#textrender').html(content);
-			//console.log(['new content ',content]);
+			// do layout to HTML with positions
+			console.log(['VRRENDERED',contentArray]);
+			// cleanup
+			content += '<a-entity class="root" position="-6 5.5 -5"   >';
+			for (var i=0; i< contentArray.length; i++) {
+				var thisContentStart = contentArray[i][1];
+				var thisContentEnd = contentArray[i][2];
+				var thisDepth = contentArray[i][0];
+				var offsetX = thisDepth * 0.2;
+				var offsetY = -1 * lineHeight * (i+1);
+				//thisContent.attr('position');
+				var position ='position="' + offsetX+' '+ offsetY + ' 0"';
+				content += thisContentStart + position + thisContentEnd;;
+			}
+			content += "</a-entity>\n";
+			$('#vrrender a-scene').append(content); 
+			
+			
 		},
       
 
 		renderChildNodes: function(node,depth,collated) {
+			var contentArrayI=[];
 			//console.log(['renderkids',node.id,typeof collated[node.id],collated[node.id]]);
-			var content = '';
 			if (collated.hasOwnProperty(node.id) && typeof collated[node.id] == 'object' ) {
-				//console.log('renderkids real',collated[node.id],collated);
-				
-				for (var i=0; i < collated[node.id].length; i++) {
-					var depth = 0;
-					var child = graph.nodeSet[collated[node.id][i]];
-					//console.log(['renderkids child',child]);
-					var selectedTextI='';
-					var selectedTextN='';
+				for (var j=0; j < collated[node.id].length; j++) {
+					var child = graph.nodeSet[collated[node.id][j]];
+					var nodeLabel = $('<b>'+child.data.label+'</b>').text();
+					var nodeContent = $('<b>'+(Boolean(child.data.content) ? child.data.content : '')+'</b>').text();
+					var nodeColor='grey';
 					var thisSelection = graph.getSelected();
 					if (thisSelection != null && thisSelection.id == child.id) {
-						selectedTextI = ' class="selectednode" ';
+						nodeColor = 'red';
 					}
-					if (isEditing(child)) {
-						selectedTextN = ' editingnode ';
-						//console.log('is edtign ? ',child,isEditing(child));
+					var contentColor='blue';
+					var thisEdited = graph.getEdited();
+					if (thisEdited != null && thisEdited.id == child.id) {
+						contentColor = 'green';
+						nodeColor = 'green';
 					}
-					content += '<a-entity id="'+child.id+'" class="node' + selectedTextN + '" bmfont-text="text: '+ child.data.label+'; color: #333" ><a-entity class="content" bmfont-text="text: '+ (Boolean(child.data.content) ? child.data.content : '') +'; color: #333"></a-entity>';
-					content += methods.renderChildNodes(child,depth+1,collated);
-					content += "</a-entity>\n";
+					console.log(['EDITED',thisEdited,contentColor]);
 					
+					contentArrayI.push([depth,'<a-entity id="'+child.id+'"  ',' class="node" bmfont-text="width: '+maxWidth+'; text: '+ nodeLabel+'; color: '+nodeColor+'" ></a-entity>']);
+					if (nodeContent.length > 0) {
+						var textSplits = splitter(nodeContent,charMaxWidth);
+						for (textSplit in textSplits) {
+							contentArrayI.push([depth,'<a-entity  ',' class="content content-node-'+child.id+'" bmfont-text="width: '+maxWidth+'; text: '+ textSplits[textSplit] +'; color: '+contentColor+'" ></a-entity>']);
+						}
+
+						
+					}
+					//console.log(['b2',contentArrayI]);
+					var kids = methods.renderChildNodes(child,depth+1,collated);
+					for (kid in kids) {
+						contentArrayI.push(kids[kid]);
+					}
+					//console.log(['a2',contentArrayI]);
 				}
 			} 
-			//else {
-			//	console.log('nokids');
-			//}
-			return content;
+			//console.log(['CHRET LOG',contentArrayI]);
+			return contentArrayI;
 		}
 	};
 	return methods;

@@ -10,20 +10,25 @@
 <script src="aframe-bmfont-text-component.min.js" ></script>
 <body>
 <div id="speechcontrols" ></div>
-<div id="vrrender" style="display: none;" >
-<a-scene inspector="url: https://aframe.io/aframe-inspector/dist/aframe-inspector.min.js" >
+<div id="vrrender"  >
+<a-scene embedded >
+<a-plane color="lightgrey" height="20" width="20" rotation="-90 0 0" ></a-plane>
+	
 </a-scene>
 </div>
 <div id="textrender" style="display: none;" ></div>
 <canvas id="springydemo" width="800" height="600" style="display: none;"  ></canvas>
 
 <script>
+//  ADD TO A-SCENE ABOVE inspector="url: https://aframe.io/aframe-inspector/dist/aframe-inspector.min.js"
 // exposed for development, move inside jquery block for prod--
 var graph = null;
 // nodes, edges, nodeSet,
 // getSelected(), setSelected(n), addNode(node), newNode(data), addEdge(e), addEdges([e]) new Springy.Node(), new Springy.Edge, findNode(label), findNodes(label), detachNode, removeNode(n), findEdges(from,to), removeEdge(e)
 var renderer = null;
 var renderAs='vr';
+//var renderAs='map';
+//var renderAs='text';
 //  graphChanged,
 var springy = null;
 var speechify = null;
@@ -36,47 +41,16 @@ jQuery(function(){
 	renderer = SpringyMap.renderMapAs([1,{'$type':renderAs}]);
 	SpringyMap.getMap();
 	renderer.graphChanged();
-	
+	var neverStopListening = false;
+	if (renderAs == "vr") neverStopListening = true;
 	speechify = $("#speechcontrols").speechify({
 		'grammarTree' : SpringyMap.grammarTree,
+		//'neverStopListening' : neverStopListening,
+		//'neverPauseListening' : true,
+		//'maxRestartBeforePause' : 2,
+		//'maxRestartBeforeStop' : 4,
 	});
-	// click select bind body filter to labels with parent div.node
-	var editedNode = null;
-	$('body').bind('click',function(e) {
-		console.log(['CLICK',$(e.target).parent(),$(e.target)]);
-		var nodeDiv = $(e.target).parent();
-		if (nodeDiv.hasClass('node')) {
-			console.log(['ISNODE',graph.getSelected()]);
-			if (graph.getSelected() != null && graph.getSelected().id ==$(nodeDiv).attr('id') ) {
-				console.log(['STARTEDIT']);
-				// start editing
-				$(e.target).attr('contenteditable',true);
-				$(e.target).bind('blur',function() {
-					$(this).attr('contenteditable',false);
-					if ($(e.target).hasClass('content')) {
-						console.log(['BLURANDSAVE content']);
-						graph.nodeSet[$(nodeDiv).attr('id')].data.content = $(this).html();
-					} else {
-						console.log(['BLURANDSAVE label']);
-						graph.nodeSet[$(nodeDiv).attr('id')].data.l = $(this).html();
-					}
-					SpringyMap.putMap();
-					renderer.graphChanged();
-					
-				});				
-			} else {
-				graph.setSelected(graph.nodeSet[$(nodeDiv).attr('id')]);
-				SpringyMap.putMap();
-				renderer.graphChanged();
-				e.stopImmediatePropagation();
-			}
-		}  else {
-			graph.setSelected(null);
-			SpringyMap.putMap();
-			renderer.graphChanged();
-			e.stopImmediatePropagation();
-		}
-	});
+	
 });
 
 

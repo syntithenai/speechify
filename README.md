@@ -148,6 +148,10 @@ These functions can be nested to create multi step dialogs.
 	]);	
 }
 ```
+## TESTS
+Integration tests for grammar indexing and parsing are included in the file test.html.
+View in a browser to run the tests.
+
 
 ## TODO
 
@@ -155,7 +159,11 @@ These functions can be nested to create multi step dialogs.
 - Clarify single token variable rules.
 - text editing grammar applied to inputs, text areas and content editables
 - improve number and date handling
+- cut/copy/paste
+- extend undo beyond single undo in text editing to undo stack on text and note functions.
 - expand VR
+	- alternate layouts
+	- microphone button fixed top right
 	- tracked controllers for selection
 	- widescreen split map AND text views for 3D
 

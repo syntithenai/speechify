@@ -25,8 +25,6 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 
 ;(function($) {
 			var restartCount = 0;
-			// don't auto turn off recognition on android (annoying for cardboard users)
-			var disableTimout = /Android/i.test(navigator.userAgent);
 			var imageSearch;
 			var recognising=false;
 			var pendingCommand=false;
@@ -41,6 +39,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				return null;
 			}
 			var speechRecognitionHandler = new SpeechRecognition();
+			var options = {};
 			
 			
 			// PRIVATE FUNCTIONS
@@ -528,13 +527,18 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			}
 			
 			function activateRecognising() {
-				//console.log('activate',restartCount);
+				console.log('activate',restartCount,options);
 				//if (speechRecognitionHandler != null) speechRecognitionHandler.stop();
 				// if we're already listening, just restart the speech handler
+				var disableTimeout = Boolean(options.neverStopListening) ;
+				var disablePause =  Boolean(options.neverPauseListening) ;
+				// don't auto turn off recognition on android (annoying for cardboard users)
+				//var isAndroid = /Android/i.test(navigator.userAgent);
+			
 				restartCount++;
-				if (!disableTimout && recognising && restartCount > 10) {
+				if (!disablePause && recognising && restartCount >options.maxRestartBeforePause) {
 					pauseRecognising();
-				} else if (!disableTimout && restartCount > 30) {
+				} else if (!disableTimeout && restartCount > options.maxRestartBeforeStop) {
 					stopRecognising();
 				} else {
 					// kick the recognition
@@ -560,6 +564,10 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 
 			function stopRecognising() {
 				//console.log('STOP');
+				if (options.neverStopListening == true) {
+					jQuery.fn.speechify.notify('Cannot stop listening');
+					return;
+				}
 				restartCount = 0;
 				methods.clearAllOverlays();
 				recognising=false;
@@ -586,7 +594,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 				$('#speechify-status .microphone').attr({'class':'microphone microphone-starting'});
 				
 				$('#speechify-status .microphone img').attr({'alt':'starting','src':$.fn.speechify.relPath+'images/microphonepause.png'});
-				$('#speechify-status').unbind('click.speechifystart');
+				$('#speechify-status').unbind('click.speechifystart').bind('click.speechifystart',function() {stopRecognising();});
 			}
 			
 			function UIWaiting() {
@@ -595,7 +603,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 					$('#speechify-status .microphone').attr({'class':'microphone microphone-waiting'});
 					
 					$('#speechify-status .microphone img').attr({'alt':'waiting','src':$.fn.speechify.relPath+'images/microphonepause.png'});
-					$('#speechify-status').unbind('click.speechifystart');
+					$('#speechify-status').unbind('click.speechifystart').bind('click.speechifystart',function() {stopRecognising();});
 				}
 			}
 			
@@ -861,15 +869,21 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 			}
 			document.write('<pre>'+logged+"\n"+logged2+"</pre>");
 		},
-		init : function(options) {
+		init : function(initOptions) {
 			pluginDOM=this;
-			options=$.extend({forceHttps:false,'relPath':''},options);
+			options=$.extend({forceHttps:false,'relPath':''},initOptions);
 			//console.log('INIT');
 			//console.log(options);
 			if (options.forceHttps) {
 				if (window.location.protocol!='https:') window.location='https://'+window.location.hostname+window.location.pathname; 
 			} 
-			
+			if (!Boolean(options.neverPauseListening) && !Boolean(options.maxRestartBeforePause)) {
+				options.maxRestartBeforePause = 10;
+			}
+			if (!Boolean(options.neverStopListening) && !Boolean(options.maxRestartBeforeStop)) {
+				options.maxRestartBeforeStop = 30;
+				
+			}
 			
 			var grammars=$.extend({},options.grammars);
 			// shortcut initialise grammar
@@ -940,6 +954,7 @@ var SpeechifyGrammar = function SpeechifyGrammar(texts,callback) {
 							console.log(['transcript',transcript]);
 							// what command
 							if (transcript=="start listening" || transcript=="wake up") {
+								UIStarting();
 								startRecognising();
 							}  else if (transcript=="pause listening" || transcript=="go to sleep") {
 								pauseRecognising();
