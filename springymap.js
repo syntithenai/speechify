@@ -850,7 +850,31 @@ var SpringyMap = {
 			graph.setSelected(null);
 			SpringyMap.putMap();
 			renderer.graphChanged();
-		graph.addNodes('Springy Maps Speech Based Text/Mindmap Editor',
+			graph.addNodes('Virtual Reality Interactions',
+				'Movement',
+				'Teleportation',
+				'Looking and Gazing',
+				'Hand Controllers',
+					'Android',
+					'Vive',
+					'Leap Motion',
+				'3D Virtual Keyboard',
+				'Listening',
+				'Speaking'
+			);
+			graph.addEdges(
+				['Movement','Virtual Reality Interactions',{}],
+				['Teleportation','Virtual Reality Interactions',{}],
+				['Looking and Gazing','Virtual Reality Interactions',{}],
+				['Hand Controllers','Virtual Reality Interactions',{}],
+				['Android','Hand Controllers',{}],
+				['Vive','Hand Controllers',{}],
+				['Leap Motion','Hand Controllers',{}],
+				['3D Virtual Keyboard','Virtual Reality Interactions',{}],
+				['Listening','Virtual Reality Interactions',{}],
+				['Speaking','Virtual Reality Interactions',{}]
+			);
+	/*	graph.addNodes('Springy Maps Speech Based Text/Mindmap Editor',
 			'You can say things like',
 				'go to sleep|wake up|stop listening|pause listening|start listening (or click the microphone)',
 				'what can i say',
@@ -871,7 +895,7 @@ var SpringyMap = {
 			
 			['go to sleep|wake up|stop listening|pause listening|start listening (or click the microphone)','You can say things like',{}],
 			['what can i say','You can say things like',{}],
-			['view as text, view as map, view as (virtual reality|vr)','You can say things like',{}],
+			//['view as text, view as map, view virtual reality','You can say things like',{}],
 			['add [note] [$content], rename [note] [$], select [$note], move [$note] [to $target|top|selected]','You can say things like',{}],
 			['edit [$note] ->EDIT MODE: dictate, select, replace, undo, finish editing','You can say things like',{}],
 			['new map [$map], save map [as] $map, open map [$map], delete map [$map]','You can say things like',{}],
@@ -881,7 +905,7 @@ var SpringyMap = {
 			['In most voice commands parameters are optional. You say "add note billing" OR  "add note" and the voice command will prompt for a title.','Multistage voice commands (Wizards)',{}],
 			['API - ask, requireVariable, confirm','Multistage voice commands (Wizards)',{}]
 			
-		);
+		);*/
 	},
 	renderMapAs: function(type) {
 		renderAs = type[1]["$type"];
